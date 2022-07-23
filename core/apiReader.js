@@ -7,6 +7,11 @@ import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiConfigObject from '../data/object/apiConfigObject.js';
 import ApiResponser from '../middleware/http/apiResponser.js';
 import ProxyWorker from '../middleware/proxy/worker.js';
+import ModelConfigReader from './modelReader.js';
+import { objectKeysToArray } from './utils.js';
+import NoModelFoundException from '../exception/NoModelFoundException.js';
+import ConfigReader from './configReader.js';
+import API_TYPE from './enum/apiType.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -50,6 +55,10 @@ export default class ApiConfigReader{
             
             // uri나 id가 @포함하고 있는지 검사할 것
             let configId = oneObject.data.uri + '@' + oneObject.data.id;
+            if(this.configInfo.get(configId)){
+                console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
+                console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
+            }
             this.configInfo.set(configId, oneObject);
         });
     };
@@ -61,9 +70,12 @@ export default class ApiConfigReader{
     setRouter(base_app){
         let URIs = this.configInfo.keys();
         let uri;
+        let baseConfig = ConfigReader.instance.getConfig();
+        let baseUri = (baseConfig[API_TYPE.REST])['base-uri'];
+        baseUri = (baseUri === '/' ? '' : baseUri);
         while( (uri = URIs.next().value) ){
             let rawUri = uri.toString().split('@');
-            let _uri = rawUri[0] + '/' + rawUri[1];
+            let _uri = baseUri + rawUri[0] + '/' + rawUri[1];
             let _configInfo = this.configInfo.get(uri);
             /*
             BEFORE PROXY
@@ -201,6 +213,26 @@ export default class ApiConfigReader{
     printConfigs(){
         console.log(this.configInfo);
     };
+
+    modelCheck(){
+        let _configInfo = ApiConfigReader.instance.configInfo;
+        
+        let keys = _configInfo.keys();
+        let _key = null;
+        
+        while( (_key = keys.next().value) ){
+            let oneObject = _configInfo.get(_key);
+            let modelId = oneObject.data.model;
+            let model = new ModelConfigReader().getConfig(modelId);
+            console.log(`${modelId} checking...`);
+            if(!model){
+                throw new NoModelFoundException(
+                    `No Model is Found for API Config -> ${modelId}`
+                );
+            }
+            console.log(`${modelId} Ok!`);
+        }
+    }
 
     checkValidity(json){
         let i_list = [allowedFormat];

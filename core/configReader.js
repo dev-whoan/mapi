@@ -4,7 +4,7 @@ import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiReader from './apiReader.js';
 import generalInfo from '../configs/default.json' assert {type: "json"};
 import apiType from './enum/apiType.js';
-//const JwtReader = require('./jwtReader.js');
+//const JwtReader = require(ß'./jwtReader.js');
 
 
 const controlList = [
@@ -30,6 +30,10 @@ export default class ConfigReader{
         ConfigReader.instance = this;
     }
 
+    getConfig(){
+        return this.configInfo.get(apiType.GENERAL)
+    }
+
     setConfigReaders(){
         this.configInfo.set(apiType.REST, new ApiReader());
     }
@@ -48,14 +52,14 @@ export default class ConfigReader{
             for(let index in current_object){
                 if(!json[current_object[index]]){
                     throw new OutofConfigKeyException(
-                        `Out of Key '${current_object[index]}' for '${apiType.GENERAL}' config.`
+                        `Out of Key '${current_object[index]}' for '${apiType.GENERAL}' config file.`
                     );
                 }
 
                 for(let jdex in properties[index]){
                     if(! (json[current_object[index]])[properties[index][jdex]] ){
                         throw new OutofConfigKeyException(
-                            `Out of Key '${properties[index][jdex]}' for '${apiType.GENERAL}->${current_object[index]}' config.`
+                            `Out of Key '${properties[index][jdex]}' for '${apiType.GENERAL}->${current_object[index]};' config file.`
                         );  
                     }
                 }

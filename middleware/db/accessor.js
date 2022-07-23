@@ -3,6 +3,7 @@ import mariadb from "mariadb";
 import InvalidSqlInsertExecuteException from '../../exception/InvalidSqlInsertExecuteException.js';
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import { objectKeysToArray, objectValuesToArray } from '../../core/utils.js';
+import PROCESS_EXIT_CODE from '../../core/enum/processExitCode.js';
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -18,6 +19,34 @@ const pool = mariadb.createPool({
 export default class DBAccessor{
     constructor(){
         
+    }
+
+    async initTest(){
+        let conn = null;
+        try{
+            conn = await pool.getConnection();
+            const result = await conn.query("SELECT 1");
+            console.log("Initialize Test Passed !");
+        } catch (e) {
+            console.log("Can you see")
+            console.log("Error below");
+            console.log(e.message);
+            if(e.message.toString().includes("retrieve connection from pool timeout after")){
+                console.error("Fail to connect to the Database. Please check [/app/configs/controller/default.json]");
+                return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
+            }
+
+            if(e.message.toString().includes("Access denied")){
+                console.error("Fail to connect to the Database. (Access Denied)");
+                return PROCESS_EXIT_CODE.DB_ACCESS_DENIED;
+            }
+        } finally {
+            if(conn != null){
+                conn.close();
+                conn.end();
+            }
+        }
+        return 0;
     }
 
     async select(table, columnList, condition){

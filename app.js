@@ -10,6 +10,8 @@ import ApiConfigReader from './core/apiReader.js';
 import ConfigReader from './core/configReader.js';
 import ModelConfigReader from './core/modelReader.js';
 import DBAccessor from './middleware/db/accessor.js';
+import { exit } from 'process';
+import ProxyWorker from './middleware/proxy/worker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,11 +42,29 @@ baseConfigReader.printConfigs();
 modelConfigReader.printConfigs();
 apiConfigReader.printConfigs();
 
+
+let proxyWorker = new ProxyWorker(
+    ["start", "end"],
+    `Job Name`,
+    apiConfigReader.modelCheck,
+    [],
+    1
+);
+
+proxyWorker.doTask();
+
 //API 처리를 위한 HTTP URI 설정
 apiConfigReader.setRouter(app);
 
+
 let dba = new DBAccessor();
 
+/* Initialize Check */
+let dbaInit = await dba.initTest();
+if(dbaInit != 0){
+    process.exit(dbaInit);
+}
+/* Initialize Check */
 /*
 dba.insert('test', ['name', 'age'], ['insert-test', '6']);
 dba.select('test');
