@@ -1,0 +1,11 @@
+{
+    "id": "test",
+    "type": "api",
+    "auth": "no",
+    "proxy-list": ["start", "end"],
+    "proxy-order": 1,
+    "log": "debug",
+    "uri": "/api",
+    "model": "user",
+    "dml": ["select", "insert", "update", "delete"]
+}
