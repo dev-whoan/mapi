@@ -1,0 +1,12 @@
+{
+    "restapi":{
+        "base-uri": "/"
+    },
+    "database": {
+        "id": "RDB_ID",
+        "pw": "RDB_PW",
+        "host": "RDB_IP",
+        "port": "RDB_PORT",
+        "scheme": "RDB_SCHEME"
+    }
+}
