@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiConfigObject from '../data/object/apiConfigObject.js';
-import app from '../app.js';
 import ApiResponser from '../middleware/http/apiResponser.js';
 import ProxyWorker from '../middleware/proxy/worker.js';
 const __filename = fileURLToPath(import.meta.url);
