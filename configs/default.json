@@ -1,0 +1,12 @@
+{
+    "restapi":{
+        "base-uri": "/"
+    },
+    "database": {
+        "id": "mapi",
+        "pw": "mapi9414",
+        "host": "192.168.56.101",
+        "port": "3306",
+        "scheme": "mapi"
+    }
+}

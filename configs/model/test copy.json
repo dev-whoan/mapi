@@ -1,0 +1,12 @@
+{
+    "id": "test2",
+    "type": "model",
+    "auth": "no",
+    "proxy-list": [],
+    "log": "true",
+    "columns": {
+        "name": "string",
+        "age": "integer"
+    },
+    "not-null": ["name"]
+}
