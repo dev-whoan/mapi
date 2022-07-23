@@ -1,0 +1,162 @@
+import ConfigReader from '../../core/configReader.js';
+import mariadb from "mariadb";
+import InvalidSqlInsertExecuteException from '../../exception/InvalidSqlInsertExecuteException.js';
+import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
+import { objectKeysToArray, objectValuesToArray } from '../../core/utils.js';
+
+const baseConfigReader = new ConfigReader();
+const dbInfo = baseConfigReader.configInfo.get('general').database;
+
+const pool = mariadb.createPool({
+    host: dbInfo.host,
+    user: dbInfo.id,
+    password: dbInfo.pw,
+    connectionLimit: 5,
+    database: dbInfo.scheme
+});
+
+export default class DBAccessor{
+    constructor(){
+        
+    }
+
+    async select(table, columnList, condition){
+        let cond = (condition ? '' : null);
+        let conn = await pool.getConnection();
+
+        let i = 0;
+        for(let key in condition){
+            cond += `${key} = ?`;
+            if(i++ < condition.length - 1){
+                cond += ' AND ';
+            }
+        }
+
+        let result = null;
+        if(cond)
+            result = await conn.query(`SELECT * FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
+        else
+            result = await conn.query(`SELECT * FROM ${table}`);
+
+        conn.close();
+        conn.end();
+        
+        return result;
+    }
+
+    async update(table, columnList, dataList, condition){
+        let getResult = await this.select(table, null, condition);
+        if(getResult.length != 1){
+            if(getResult.length > 1){
+                return {
+                    code: 600
+                }
+            } 
+
+            return this.insert(table, columnList, dataList);
+        }
+        
+        if(!columnList || !dataList || (columnList.length != dataList.length)){
+            throw new InvalidSqlInsertExecuteException(
+                `ColumnList ${columnList} or DataList ${dataList} is null || Size of ColumnList and DataList are not match.`
+            );
+        }
+
+        let values = '';
+        for(let i = 0; i < columnList.length; i++){
+            values += columnList[i] + '=?';
+            if(i < columnList.length - 1){
+                values += ', ';
+            }
+        }
+
+        let cond = (condition ? '' : null);
+        let i = 0;
+        for(let key in condition){
+            cond += `${key} = ?`;
+            if(i++ < condition.length - 1){
+                cond += ' AND ';
+            }
+        }
+
+        let conn = await pool.getConnection();
+
+        let _query = `UPDATE ${table} SET ${values} WHERE ${cond}`;
+        let result = await conn.query(_query, dataList.concat(objectValuesToArray(condition)));
+
+        return result;
+    }
+
+    // currently single insert
+    async insert(table, columnList, dataList){
+        if(!columnList || !dataList || (columnList.length != dataList.length)){
+            throw new InvalidSqlInsertExecuteException(
+                `ColumnList ${columnList} or DataList ${dataList} is null || Size of ColumnList and DataList are not match.`
+            );
+        }
+        let conn = await pool.getConnection();
+        let result = null;
+        let _columnList = '';
+        let _dataQuestionMark = '';
+
+        for(let i = 0; i < columnList.length; i++){
+            _columnList += columnList[i];
+            _dataQuestionMark += '?'
+
+            if(i < columnList.length -1){
+                _columnList += ', ';
+                _dataQuestionMark += ', ';
+            }
+        }
+
+        let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
+        try{
+            result = await conn.query(query, dataList);
+        } catch (e) {
+            if(e.message.toString().includes('Duplicate entry')){
+                return {
+                    code: 200,
+                    message: HTTP_RESPONSE[200]
+                };
+            }
+        } finally {
+            conn.close();
+            conn.end();
+        }
+
+        return result;
+    }
+
+    async delete(table, condition){
+        let cond = '';
+        let conn = await pool.getConnection();
+        
+        let i = 0;
+        for(let key in condition){
+            cond += `${key} = ?`;
+            if(i++ < condition.length - 1){
+                cond += ' AND ';
+            }
+        }
+
+        let result = null;
+        try{
+            result = await conn.query(`DELETE FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
+        } catch (e) {
+            if(e.message.toString().includes('Unknown column')){
+                return {
+                    code: 204,
+                    message: HTTP_RESPONSE[204]
+                }
+            }
+        } finally {
+            conn.close();
+            conn.end();
+        }
+        
+        conn.close();
+        conn.end();
+        
+        return result;
+    }
+}
