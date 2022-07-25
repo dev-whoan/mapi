@@ -7,9 +7,9 @@
 ---
 
 # List of page
-[How it works](링크)
+[How it works](#how-it-works)
 
-[Installation](링크)
+[Installation](#installation)
 
 ---
 
