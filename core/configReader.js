@@ -4,11 +4,10 @@ import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiReader from './apiReader.js';
 import generalInfo from '../configs/default.json' assert {type: "json"};
 import apiType from './enum/apiType.js';
-//const JwtReader = require(ß'./jwtReader.js');
 
 
 const controlList = [
-    "restapi", "database"
+    "restapi", "database", "jwt"
 ]
 
 const properties = [
@@ -17,6 +16,17 @@ const properties = [
     ],
     [
         'id', 'pw', 'host', 'port', 'scheme'
+    ],
+    [
+        'use',
+        'generate-uri',
+        'lifetime',
+        'secret',
+        'auth-table',
+        'auth-columns',
+        'alg',
+        'columns',
+        'keys'
     ]
 ]
 

@@ -45,12 +45,33 @@ export default class ProxyWorker{
             startLogProxy(this.taskName);
         }
 
-
         // Authorize, Origin Task 등 특화된 파라미터 어떻게 전달?
         while(jobIndex < this.proxyList.length){
             if(startJob && jobIndex == this.proxyList.indexOf('start')){
                 jobIndex++;
                 continue;
+            }
+
+            if(jobIndex == this.proxyList.indexOf('auth')){
+                jobIndex++;
+
+                let failMessage = {
+                    code: 403,
+                    success: false,
+                    message: 'Authorization Failed'
+                }
+                let result = null;
+                if( !req.headers.authorization || 
+                    !authorizeProxy('authorize', req.headers.authorization)
+                ){
+                    console.log('authorization failed');
+                    console.log(req.headers.authorization);
+                    if(endJob){
+                        endLogProxy(this.taskName);
+                    }
+
+                    return res.status(403).json(failMessage)
+                }
             }
 
             if(endJob && jobIndex == this.proxyList.indexOf('end')){
@@ -71,7 +92,6 @@ export default class ProxyWorker{
 
         if(endJob){
             endLogProxy(this.taskName);
-
         }
 
         if(jobIndex < this.proxyList.length){

@@ -98,7 +98,7 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                     
-                        let result = proxyWorker.doTask();            
+                        let result = proxyWorker.doTask(req, res);            
                         return result;
                     }
                 );
@@ -116,7 +116,7 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrde
                         );
                         
-                        let result = proxyWorker.doTask();
+                        let result = proxyWorker.doTask(req, res);
                               
                         return result;
                     }
@@ -138,8 +138,8 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask();
-                              
+                        let result = proxyWorker.doTask(req, res);
+                        
                         return result;      
                     }
                 );
@@ -160,7 +160,7 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask();
+                        let result = proxyWorker.doTask(req, res);
                               
                         return result; 
                     }
@@ -179,7 +179,7 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask();
+                        let result = proxyWorker.doTask(req, res);
                               
                         return result;          
                     }
@@ -201,7 +201,7 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask();
+                        let result = proxyWorker.doTask(req, res);
                               
                         return result;          
                     }

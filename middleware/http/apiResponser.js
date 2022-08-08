@@ -224,7 +224,7 @@ export default class ApiResponser{
             code: _code
         };
 
-        return res.status(msg.code).send(msg);
+        return res.status(msg.code).json(msg);
     }
 
     async post(proxied, apiResponser, req, res, next){
@@ -253,7 +253,7 @@ export default class ApiResponser{
             msg.data.message = HTTP_RESPONSE[204];
         }
 
-        return res.status(msg.code).send(msg);
+        return res.status(msg.code).json(msg);
     }
 
     async put(proxied, apiResponser, req, res, next){
@@ -271,7 +271,7 @@ export default class ApiResponser{
             code: _code
         };
 
-        return res.status(msg.code).send(msg);
+        return res.status(msg.code).json(msg);
     }
 
     async delete(proxied, apiResponser, req, res, next){
@@ -283,6 +283,6 @@ export default class ApiResponser{
             code: 204
         };
 
-        return res.status(200).send(msg);
+        return res.status(200).json(msg);
     }
 }

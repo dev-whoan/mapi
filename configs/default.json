@@ -4,9 +4,25 @@
     },
     "database": {
         "id": "RDB_ID",
-         "pw": "RDB_PW",
-         "host": "RDB_IP",
-         "port": "RDB_PORT",
-         "scheme": "RDB_SCHEME"
+        "pw": "RDB_PW",
+        "host": "RDB_HOST",
+        "port": "RDB_PORT",
+        "scheme": "RDB_SCHEME"
+    },
+    "jwt": {
+        "use": true,
+        "generate-uri": "/auth/do",
+        "verify-uri": "/auth/verify",
+        "lifetime": "600",
+        "secret": "JWT_SECRET",
+        "auth-table": "JWT_AUTH",
+        "auth-columns": ["name", "password"],
+        "alg": "HS256",
+        "columns": ["SEQ", "name", "email"],
+        "keys": {
+            "SEQ": "index",
+            "name": "nickname",
+            "email": "contact"
+        }
     }
 }

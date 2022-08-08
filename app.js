@@ -12,6 +12,9 @@ import ModelConfigReader from './core/modelReader.js';
 import DBAccessor from './middleware/db/accessor.js';
 import { exit } from 'process';
 import ProxyWorker from './middleware/proxy/worker.js';
+import HTTP_RESPONSE from './core/enum/httpResponse.js';
+import e from 'express';
+import JwtHandler from './middleware/auth/jwtHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +38,7 @@ app.use(express.json());
 let apiConfigReader = new ApiConfigReader();
 let modelConfigReader = new ModelConfigReader();
 let baseConfigReader = new ConfigReader();
+let jwtObject = baseConfigReader.getConfig().jwt;
 
 baseConfigReader.setConfigReaders();
 
@@ -53,9 +57,10 @@ let proxyWorker = new ProxyWorker(
 
 proxyWorker.doTask();
 
+console.log(jwtObject);
+
 //API 처리를 위한 HTTP URI 설정
 apiConfigReader.setRouter(app);
-
 
 let dba = new DBAccessor();
 
@@ -73,7 +78,57 @@ dba.delete('test2', {
 });
 */
 
-app.all('*', function(req, res){
+if(jwtObject.use){
+    app.post(jwtObject['generate-uri'], async (req, res) => {
+        let body = req.body;
+        console.log(body);
+        let result = await dba.jwtAuthorize(
+            jwtObject['auth-table'],
+            jwtObject['auth-columns'],
+            jwtObject['columns'],
+            body
+        );
+
+        if(result.length == 0){
+            return res.status(401).json({
+                code: 401,
+                message: HTTP_RESPONSE[401]
+            });
+        }
+        
+        let _data = result[0];
+        let jwtHandler = new JwtHandler();
+        jwtHandler.setPayload(_data);
+        jwtHandler.generateSignature();
+
+        return res.status(200).json(jwtHandler.getJwtString());
+    });
+
+    app.post(jwtObject['verify-uri'], async (req, res) => {
+        let token = req.headers.authorization;
+        if(!token){
+            return res.status(403).json({
+                success: false,
+                message: 'Authentication failed'
+            });
+        }
+
+        let jwtToken = token.split(" ")[1];
+        let jwtHandler = new JwtHandler();
+        let verifyResult = jwtHandler.verify(jwtToken);
+
+        if(!verifyResult){
+            return res.status(403).send();
+        }
+        
+        return res.status(200).json({
+            code: 200,
+            success: true,
+            message: 'Token is valid'
+        });
+    });
+}
+app.all('*', (req, res) => {
 	res.status(404).send("<h1>ERROR - 페이지를 찾을 수 없습니다.</h1>");
 });
 

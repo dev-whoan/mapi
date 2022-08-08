@@ -4,6 +4,7 @@ import InvalidSqlInsertExecuteException from '../../exception/InvalidSqlInsertEx
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import { objectKeysToArray, objectValuesToArray } from '../../core/utils.js';
 import PROCESS_EXIT_CODE from '../../core/enum/processExitCode.js';
+import NullOrUndefinedException from '../../exception/nullOrUndefinedException.js';
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -48,6 +49,45 @@ export default class DBAccessor{
         }
         return 0;
     }
+    
+    async jwtAuthorize(table, keyColumns, selectColumns, body){
+        if(!table || !keyColumns){
+            throw new NullOrUndefinedException(
+                `Table(${table}) or Key Columns(${keyColumns}) is Null.`
+            );
+        }
+        if(!body){
+            throw new NullOrUndefinedException(
+                `Body parameter(${body}) for JWTAuthorize is Null.`
+            );
+        }
+        let cond = '';
+        // size: 5
+        let _value = [];
+        for(let i = 0; i < keyColumns.length; i++){
+            cond += `${keyColumns[i]} = ?`
+            _value.push(body[keyColumns[i]]);
+            if(i < keyColumns.length -1){
+                cond += ' AND ';
+            }
+        }
+        let _columns = '';
+        for(let i = 0; i < selectColumns.length; i++){
+            _columns += `${selectColumns[i]}`;
+            if(i < selectColumns.length -1) {
+                _columns += ', ';
+            }
+        }
+    
+        console.log(cond);
+        console.log(_value);
+        let conn = await pool.getConnection();
+        let result = await conn.query(`SELECT ${_columns} FROM ${table} WHERE ${cond}`, _value);
+        conn.close();
+        conn.end();
+
+        return result;
+    }
 
     async select(table, columnList, condition){
         let cond = (condition ? '' : null);
@@ -87,7 +127,7 @@ export default class DBAccessor{
         
         if(!columnList || !dataList || (columnList.length != dataList.length)){
             throw new InvalidSqlInsertExecuteException(
-                `ColumnList ${columnList} or DataList ${dataList} is null || Size of ColumnList and DataList are not match.`
+                `ColumnList(${columnList}) or DataList(${dataList}) is null. Or size of ColumnList and DataList are not match.`
             );
         }
 
