@@ -18,7 +18,8 @@ FROM node:16.16.0
          npm install mariadb \
  	npm install path \
  	npm install url \
- 	npm install fs
+ 	npm install fs \
+	npm install crypto
 
  RUN npm ci --only=production
 
