@@ -3,7 +3,7 @@
     "type": "api",
     "auth": "no",
     "proxy-list": ["start", "auth", "end"],
-    "proxy-order": 2,
+    "proxy-order": 1,
     "log": "debug",
     "uri": "/api",
     "model": "test",

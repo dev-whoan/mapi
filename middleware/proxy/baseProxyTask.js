@@ -17,18 +17,39 @@ const endLogProxy = (taskName) => {
     console.log(`===============================`);
 };
 
-const authorizeProxy = (taskName, authorization) => {
+const authorizeProxy = (taskName, req) => {
+    let headers = req.headers;
     console.log(`***************`);
     console.log(`Task: ${taskName} have started`);
     console.log(getUTCTime());
     console.log(`***************`);
-    if(!authorization){
-        return res.status(403).json({
-            success: false,
-            message: 'Authentication failed'
-        });
+    if(!headers){
+        console.log(`Authentication failed:: No header is given.`);
+        return false;
     }
+    let authorization = headers.authorization;
 
+    if(!authorization){
+        console.log(`Authentication failed::[Token]-${req.headers.authorization}`);
+        return false;
+    }
+/*
+    let failMessage = {
+        code: 403,
+        success: false,
+        message: 'Authentication Failed'
+    }
+    let result = null;
+    if( !req.headers.authorization || 
+        !authorizeProxy('authorize', req.headers.authorization)
+    ){
+        console.log(`authorization failed:: ${req.headers.authorization}`);
+        if(endJob){
+            endLogProxy(this.taskName);
+        }
+        return failMessage;
+    }
+*/
     let jwtToken = authorization.split(" ")[1];
     let jwtHandler = new JwtHandler();
     console.log(`***************`);

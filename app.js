@@ -100,8 +100,20 @@ if(jwtObject.use){
         let jwtHandler = new JwtHandler();
         jwtHandler.setPayload(_data);
         jwtHandler.generateSignature();
+        let _token = jwtHandler.getJwtString();
+        let msg = {
+            code: 200,
+            success: true,
+            token: _token
+        };
+        if(!_token){
+            msg = {
+                code: 500,
+                success: false
+            };
+        };
 
-        return res.status(200).json(jwtHandler.getJwtString());
+        return res.status(msg.code).json(msg);
     });
 
     app.post(jwtObject['verify-uri'], async (req, res) => {

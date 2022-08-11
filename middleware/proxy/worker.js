@@ -54,23 +54,16 @@ export default class ProxyWorker{
 
             if(jobIndex == this.proxyList.indexOf('auth')){
                 jobIndex++;
-
-                let failMessage = {
-                    code: 403,
-                    success: false,
-                    message: 'Authorization Failed'
-                }
-                let result = null;
-                if( !req.headers.authorization || 
-                    !authorizeProxy('authorize', req.headers.authorization)
-                ){
-                    console.log('authorization failed');
-                    console.log(req.headers.authorization);
+                let _authresult = authorizeProxy('authorize', req);
+                if(!_authresult){
                     if(endJob){
                         endLogProxy(this.taskName);
                     }
-
-                    return res.status(403).json(failMessage)
+                    return {
+                        code: 403,
+                        success: false,
+                        message: 'Authentication Failed'
+                    };
                 }
             }
 
@@ -84,10 +77,7 @@ export default class ProxyWorker{
                 continue;
             }
 
-
-//            this.proxyList[jobIndex]();
             jobIndex++;
-//            this.proxyList.splice(0, 1);
         }
 
         if(endJob){

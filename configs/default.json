@@ -3,11 +3,11 @@
         "base-uri": "/"
     },
     "database": {
-        "id": "RDB_ID",
-        "pw": "RDB_PW",
-        "host": "RDB_HOST",
-        "port": "RDB_PORT",
-        "scheme": "RDB_SCHEME"
+        "id": "mapi",
+        "pw": "mapi9414",
+        "host": "192.168.0.79",
+        "port": "3306",
+        "scheme": "mapi"
     },
     "jwt": {
         "use": true,

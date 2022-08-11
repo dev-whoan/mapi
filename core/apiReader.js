@@ -12,6 +12,7 @@ import { objectKeysToArray } from './utils.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ConfigReader from './configReader.js';
 import API_TYPE from './enum/apiType.js';
+import HTTP_RESPONSE from './enum/httpResponse.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -86,7 +87,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 base_app.get(
                     _uri,
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -98,13 +99,21 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                     
-                        let result = proxyWorker.doTask(req, res);            
-                        return result;
+                        // result = { code: ..., message: ...}
+                        let result = await proxyWorker.doTask(req, res);  
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);
                     }
                 );
                 base_app.get(
                     _uri + '/*',
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -116,9 +125,15 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrde
                         );
                         
-                        let result = proxyWorker.doTask(req, res);
-                              
-                        return result;
+                        let result = await proxyWorker.doTask(req, res);
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);
                     }
                 );
             }
@@ -126,7 +141,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('insert') !== -1){
                 base_app.post(
                     _uri,
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -138,9 +153,15 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask(req, res);
-                        
-                        return result;      
+                        let result = await proxyWorker.doTask(req, res);
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);    
                     }
                 );
             }
@@ -148,7 +169,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('update') !== -1){
                 base_app.put(
                     _uri,
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -160,14 +181,20 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask(req, res);
-                              
-                        return result; 
+                        let result = await proxyWorker.doTask(req, res);
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);
                     }
                 )
                 base_app.put(
                     _uri + '/*',
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -179,9 +206,15 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask(req, res);
-                              
-                        return result;          
+                        let result = await proxyWorker.doTask(req, res);
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);         
                     }
                 );
             }
@@ -189,7 +222,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('delete') !== -1){
                 base_app.delete(
                     _uri,
-                    function(req, res, next){
+                    async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -201,9 +234,15 @@ export default class ApiConfigReader{
                             _configInfo.data.proxyOrder
                         );
                         
-                        let result = proxyWorker.doTask(req, res);
-                              
-                        return result;          
+                        let result = await proxyWorker.doTask(req, res);
+                        if(!result || !result.code){
+                            result = {
+                                code: 500,
+                                message: HTTP_RESPONSE[500]
+                            };
+                        }                                                        
+//                        return result;
+                        return res.status(result.code).json(result);          
                     }
                 );
             }
