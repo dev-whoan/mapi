@@ -101,11 +101,17 @@ export default class DBAccessor{
             }
         }
 
+        if(!columnList){
+            throw new NullOrUndefinedException(
+                `Column should be specified in [Model] for REST API`
+            );
+        }
+
         let result = null;
         if(cond)
-            result = await conn.query(`SELECT * FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
+            result = await conn.query(`SELECT ${columnList} FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
         else
-            result = await conn.query(`SELECT * FROM ${table}`);
+            result = await conn.query(`SELECT ${columnList} FROM ${table}`);
 
         conn.close();
         conn.end();

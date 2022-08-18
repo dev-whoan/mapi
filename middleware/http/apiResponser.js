@@ -3,7 +3,7 @@ import ApiConfigReader from '../../core/apiReader.js';
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
 import ApiDataHandler from '../db/apiDataHandler.js';
-import { arrayToObject } from '../../core/utils.js';
+import { arrayToObject, objectKeysToArray } from '../../core/utils.js';
 
 export default class ApiResponser{
     constructor(apiConfigObject){
@@ -86,7 +86,15 @@ export default class ApiResponser{
         }
 
         let table = modelObject.data.id;
-        return apiDataHandler.doSelect(table, null, _condition);
+        let _columns = '';
+        let _modelObjectColumns = objectKeysToArray(modelObject.data.columns);
+        _modelObjectColumns.forEach( (item, index) => {
+            _columns += item;
+            if(index < _modelObjectColumns.length - 1)
+                _columns += ', '
+        })
+
+        return apiDataHandler.doSelect(table, _columns, _condition);
     }
 
     putApiData(uri, body){
