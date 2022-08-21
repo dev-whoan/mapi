@@ -10,6 +10,7 @@ const dbInfo = baseConfigReader.configInfo.get('general').database;
 
 const pool = mariadb.createPool({
     host: dbInfo.host,
+    port: dbInfo.port,
     user: dbInfo.id,
     password: dbInfo.pw,
     connectionLimit: 5,
