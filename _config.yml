@@ -1,0 +1,13 @@
+theme: jekyll-theme-time-machine
+title: MAPI
+description: Servlet Based Web Server Framework
+show_list: true
+#link1: true
+#link1_uri: /configs
+#link1_label: Configs
+analytics:
+  provider               : "google-gtag" 
+                          # false (default), "google", "google-universal", "google-gtag", "custom"
+  google:
+    tracking_id          : "G-C45ZFV66FH"
+    anonymize_ip         : # true, false (default)
