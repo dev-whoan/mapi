@@ -1,10 +1,3 @@
----
-layout: custom
----
-
-# Welcome to MkWeb!
-
------
 # Welcome to MAPI!
 
 # API Express(Nodejs, javascript) Web Server based on MAP
@@ -52,15 +45,37 @@ So the file is located right under `configs/`, it will be `configs/default.json`
 
 ```json
 {
+    "cors": {
+        "default": "http://localhost:3000",
+        "origin": ["http://localhost:3000", "http://localhost:5000"],
+        "methods": "GET,PUT,POST,DELETE,HEAD,OPTIONS",
+        "allow-headers": "Authorization, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin"
+    },
     "restapi":{
         "base-uri": "/"
     },
     "database": {
         "id": "RDB_ID",
-         "pw": "RDB_PW",
-         "host": "RDB_IP",
-         "port": "RDB_PORT",
-         "scheme": "RDB_SCHEME"
+        "pw": "RDB_PW",
+        "host": "RDB_IP",
+        "port": "RDB_PORT",
+        "scheme": "RDB_SCHEME"
+    },
+    "jwt": {
+        "use": "yes",
+        "generate-uri": "/auth/do",
+        "verify-uri": "/auth/verify",
+        "lifetime": "600",
+        "secret": "JWT_SECRET",
+        "auth-table": "JWT_AUTH",
+        "auth-columns": ["name", "password"],
+        "alg": "HS256",
+        "columns": ["SEQ", "name", "email"],
+        "keys": {
+            "SEQ": "index",
+            "name": "nickname",
+            "email": "contact"
+        }
     }
 }
 ```
@@ -68,6 +83,74 @@ So the file is located right under `configs/`, it will be `configs/default.json`
 If mapi cannot connect to database, mapi will be shutdown with information such that `Access Denied, Fail to connect.`
 
 If one of the property is missing, mapi will be shutdown with information about what went wrong.
+
+### cors Property
+
+cors property let MAPI allow cross-origin-servers to use the api.
+
+`default`: Define your base server address which use MAPI. If your front server or any others are operating in http://localhost:3000, then it will be your value. If you are operating MAPI in server-less environment, it will be hostname of MAPI.
+
+`origin`: Define cross-origins where is allowed to use MAPI. `["*"]` for wildcard.
+
+`methods`: Define methods that can be called to use MAPI.
+
+`allow-headers`: Default headers to use MAPI. You can add other headers, but should not remove any of it.
+
+### restapi Property
+
+restapi property define essential information to use REST-API call.
+
+`base-uri`: Define prefix uri to use rest-api. If it is set to `/mapi` and your rest api controller's uri have defined into `/api/user`, the whole request uri will be `/mapi/api/user`.
+
+### database Property
+
+database property define RDB connect information. If any of config is wrong, hence MAPI cannot connect to the database, MAPI will be shutdown with database error.
+
+`id`: User id of RDB
+
+`password`: User password of RDB
+
+`host`: Hostname of RDB
+
+`port`: Port of RDB
+
+`scheme`: Database(scheme) to use. It must be created in the RDB.
+
+### jwt Property
+
+jwt property define Json Web Token settings. If your any controller require authorization, jwt will be used.
+
+`use`: Whether use JWT or not.
+
+`generate-uri`: Uri to generate token. It must not be duplicated with any other API uri. You can generate token to the uri with POST method.
+
+`verify-uri`: Uri to verify given token. You must send token into request header, `Authorization` field, value with Bearer token (`Bearer eyJhbGciOiJIUzI1NiIsInR5cGUiOiJKV...`).
+
+`lifetime`: Lifetime of the generated token. If given token lived more than lifetime, you cannot authorize with the token. If so, you must get new token. (Unit: seconds)
+
+`secret`: Secret to create JWT Signature. IT MUST NOT BE EXPOSED.
+
+`auth-table`: Database table that must be created in RDB. JWT is issued based on user information, so this table will carry the users' information. It is used with `auth-columns`, `columns`, `keys` properties.
+
+`alg`: Algorithm that is used to make JWT Signature.
+
+`columns`: Columns that generate JWT payload. These values are raw column name of `RDB -> auth-table`. For security, this columns must not be EXPOSED. The columns' names will be refactor through `keys` property.
+
+`keys`: New key to refactor original `columns`. For example, based on following properties, JWT payload will have `number, nickname, contact` keys not `id, name, email`.
+
+```json
+/* EXAMPLE */
+"jwt": {
+    ...
+    "columns": ["id", "name", "email"],
+    "keys": {
+        "id": "number",
+        "name": "nickname",
+        "email": "contact"
+    }
+    ...
+}
+```
 
 ## Controller
 
@@ -185,6 +268,17 @@ So total JSON file for Model,
 ```
 
 If the json file's name is `user.json`, then the file must be exist on `configs/model/user.json` (`configs/model` is pre-fixed path).
+
+# How to Request
+
+## REST-API
+
+
+
+## JWT
+
+The uri for JWT is set on `default.json -> "jwt" property`. You need `generate-uri` and `verify-uri`.
+
 
 # Installation
 
