@@ -33,6 +33,20 @@ So you can think Controller is actually method which you want to run.
 
 You have to set all the needed things `JSON` file, according to its' right path under the `configs` folder.
 
+## Prerequisites
+
+You should prepare configuration for MAPI. The base files are `default.json`, `model directory`, `controller directory`, and `services directory`.
+
+```
+configs
+│    default.json
+└─── controller
+│    └    rest
+│         └─── [some_jsons_for_rest_setting.json]
+└─── model
+     └─── [some_jsons_for_model_setting.json]     
+```
+
 ## Default setting for MAPI
 
 You need to set default setting for using MAPI.
@@ -288,21 +302,6 @@ The uri for JWT is set on `default.json -> "jwt" property`. You need `generate-u
 
 # Installation
 
-## Prerequisites
-
-You should prepare configuration for MAPI. The base files are `default.json`, `model directory`, `controller directory`, and `services directory`.
-
-```
-configs
-│    default.json
-└─── controller
-│    └    rest
-│         └─── [some_jsons_for_rest_setting.json]
-└─── model
-     └─── [some_jsons_for_model_setting.json]     
-```
-
-
 ## Docker
 
 ### Lateset Version:: 0.0.4
@@ -310,8 +309,6 @@ configs
 If you finished to set the `Prerequisites` files such that controller and model in some location with name `/path/to/configs/` (ex. `/home/mapi/configs`), you can run with following docker commands
 
 docker run -d -p 3000:[PORT] -v [/path/to/configs]:/app/configs --name mapi devwhoan/mapi
-
-
 
 ## Code based Nodejs
 
