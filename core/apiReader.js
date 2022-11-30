@@ -8,7 +8,7 @@ import ApiConfigObject from '../data/object/apiConfigObject.js';
 import ApiResponser from '../middleware/http/apiResponser.js';
 import ProxyWorker from '../middleware/proxy/worker.js';
 import ModelConfigReader from './modelReader.js';
-import { objectKeysToArray } from './utils.js';
+import { insertAt, objectKeysToArray } from './utils.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ConfigReader from './configReader.js';
 import API_TYPE from './enum/apiType.js';
@@ -54,7 +54,12 @@ export default class ApiConfigReader{
                 jsonData.dml
             );
             
-            // uri나 id가 @포함하고 있는지 검사할 것
+            if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
+                console.warn(`Attribute [uri] and [id] must not include '@' word.`);
+                console.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
+                return;
+            }
+
             let configId = oneObject.data.uri + '@' + oneObject.data.id;
             if(this.configInfo.get(configId)){
                 console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
@@ -84,14 +89,27 @@ export default class ApiConfigReader{
             let apiResponser = new ApiResponser(_configInfo);
             return apiResponser.get(req, res, next);         
             */
+           
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 base_app.get(
                     _uri,
                     async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                        
+                        /*
+                        if(_configInfo.data.auth === 'yes'){
+                            _configInfo.data.proxyList = _configInfo.data.proxyList.filter( i => i != 'auth' );
+                            _configInfo.data.proxyList = insertAt(
+                                _configInfo.data.proxyList,
+                                1,
+                                'auth'
+                            );
+                        }
+                        */
 
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [GET]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.get,
@@ -115,9 +133,10 @@ export default class ApiConfigReader{
                     _uri + '/*',
                     async function(req, res, next){
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
+                        
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [GET]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.get,
@@ -146,6 +165,7 @@ export default class ApiConfigReader{
 
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [POST]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.post,
@@ -174,6 +194,7 @@ export default class ApiConfigReader{
 
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [PUT]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.put,
@@ -199,6 +220,7 @@ export default class ApiConfigReader{
 
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [PUT]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.put,
@@ -227,6 +249,7 @@ export default class ApiConfigReader{
 
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
+                            _configInfo.data.auth === 'yes',
                             _configInfo.data.proxyList,
                             `API Worker - [DELETE]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
                             apiResponser.delete,
@@ -263,13 +286,13 @@ export default class ApiConfigReader{
             let oneObject = _configInfo.get(_key);
             let modelId = oneObject.data.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`${modelId} checking...`);
+            console.log(`Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`${modelId} Ok!`);
+            console.log(`Model [${modelId}] Ok!`);
         }
     }
 

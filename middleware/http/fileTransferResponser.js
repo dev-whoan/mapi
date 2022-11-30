@@ -1,11 +1,11 @@
 
-import ApiConfigReader from '../../core/apiReader.js';
+import FileTransferConfigReader from '../../core/fileTransferReader';
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
-import ApiDataHandler from '../db/apiDataHandler.js';
+import FileTransferDataHandler from '../db/apiDataHandler.js';
 import { arrayToObject, objectKeysToArray } from '../../core/utils.js';
 
-export default class ApiResponser{
+export default class FileTransferResponser{
     constructor(apiConfigObject){
         this.apiConfigObject = apiConfigObject;
         this.apiId = this.apiConfigObject.data.uri + '@' + this.apiConfigObject.data.id;
@@ -25,80 +25,6 @@ export default class ApiResponser{
         */
     }
 
-    /* HTTP Methods
-    *  1. Get: Get Data
-    *  2. Post: Create Data
-    *  3. Put: Modify Data
-    *  4. Delete: Delete Data
-    */
-
-    /* HTTP Methods Functions
-    *  return: HTTP Response
-    *  1. apiDataGenerator에 요청
-    *  2. 데이터 획득
-    *  3. HTTP JSON 응답 생성
-    *  4. HTTP 응답 반환
-    */
-
-    /* {}ApiData Functions
-    *  return: Object
-    *  1. Process Request Info
-    *  2. Check Validity
-    *  3. Fetch Data From ApiDataHandler
-    *  4. Return
-    */
-
-    getApiData(uri){
-        let apiDataHandler = new ApiDataHandler();
-        let modelConfigReader = new ModelConfigReader();
-
-        let model = this.apiConfigObject.data.model;
-        let modelObject = modelConfigReader.getConfig(model);
-        let conditionUri = uri.split(this.originalUri)[1];
-        let _requestConditions = conditionUri.split('/');
-        _requestConditions.splice(0, 1);
-
-        if(_requestConditions.length === 1 && _requestConditions[0] === ''){
-            _requestConditions.splice(0, 1);
-        }
-
-        if(_requestConditions.length % 2 != 0){
-            console.log(`Condition must match follow rule: /key1/{value1}/key2/{value2}... but given condition is [${_requestConditions}]`)
-            return {
-                code: 400
-            };
-        }
-        let _condition = null;
-
-        if(_requestConditions.length !== 0){
-            _condition = {};
-
-            for(let i = 0; i < _requestConditions.length; i += 2){
-                _condition[_requestConditions[i]] = _requestConditions[i+1];
-            }
-            
-            for(let key in _condition){
-                if(!modelObject.data.columns[key]){
-                    console.log(`Model does not have the request column [${key}]`);
-                    return {
-                        code: 400
-                    };
-                }
-            }
-        }
-
-        let table = modelObject.data.id;
-        let _columns = '';
-        let _modelObjectColumns = objectKeysToArray(modelObject.data.columns);
-        _modelObjectColumns.forEach( (item, index) => {
-            _columns += item;
-            if(index < _modelObjectColumns.length - 1)
-                _columns += ', '
-        })
-
-        return apiDataHandler.doSelect(table, _columns, _condition);
-    }
-
     putApiData(uri, body){
         let apiDataHandler = new ApiDataHandler();
         let modelConfigReader = new ModelConfigReader();
@@ -113,14 +39,12 @@ export default class ApiResponser{
 
         if( (_requestConditions.length === 1 && _requestConditions[0] === '') 
         ||  _requestConditions.length === 0){
-            console.log(`Condition for put data is not given`);
             return {
                 code: 400
             };
         }
 
         if(_requestConditions.length % 2 != 0){
-            console.log(`Condition must match follow rule: /key1/{value1}/key2/{value2}... but given condition is [${_requestConditions}]`)
             return {
                 code: 400
             };
@@ -136,7 +60,6 @@ export default class ApiResponser{
             
             for(let key in _condition){
                 if(!modelObject.data.columns[key]){
-                    console.log(`Model does not have the request column [${key}]`);
                     return {
                         code: 400
                     };
@@ -151,7 +74,6 @@ export default class ApiResponser{
 
         for(let key in body){
             if(!modelObject.data.columns[key]){
-                console.log(`Model does not have the request column [${key}]`);
                 return {
                     code: 400
                 };
@@ -162,8 +84,6 @@ export default class ApiResponser{
 
         for(let i = 0; i < modelObject.data.notNull.length; i++){
             if(!body[modelObject.data.notNull[i]]){
-                console.log(`Require column is null [${columnNotNull[i]}] and you sent`);
-                console.log(body);
                 return {
                     code: 400
                 };
@@ -194,7 +114,6 @@ export default class ApiResponser{
 
         for(let key in body){
             if(!modelObject.data.columns[key]){
-                console.log(`Model does not have the request column [${key}]`);
                 return {
                     code: 400
                 };
@@ -205,8 +124,6 @@ export default class ApiResponser{
 
         for(let i = 0; i < columnNotNull.length; i++){
             if(!body[columnNotNull[i]]){
-                console.log(`Require column is null [${columnNotNull[i]}] and you sent`);
-                console.log(body);
                 return {
                     code: 400
                 };
