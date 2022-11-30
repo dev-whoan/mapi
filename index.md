@@ -327,7 +327,7 @@ If you finished to set the `Prerequisites` files such that controller and model 
 mapi$ cp -r [/path/to/pre-configs/] ./configs
 ~$ docker run -d -p 3000:[PORT] -v ./configs:/app/configs --name mapi devwhoan/mapi:0.0.4
 ```
-## Code based Nodejs
+## Nodejs
 
 If you want to modify and change some codes or whatever, download the code, and just run the nodejs.
 
