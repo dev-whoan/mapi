@@ -328,10 +328,15 @@ For example, with the below configuration, you can request to `/api/user`.
 You may want to manipulate database's model, and here is a solution to `select, insert, update, delete` methods (`get, create, update, remove`). I will update this article with details later.
 
 `GET`: Method to `select` data from database. The result will be selected based on model configuration. If succeed, http response code will be 200 or 204.
+
 `POST`: Method to `insert` data to database. Http response code will be 201 or 200. (201: created, 200: already exists)
+
 `PUT`: Method to `update` data of database. You must specify exist data to modify with URI segments to specify it. Http response code will be 200, 201. (200: updated, 201: created)
+
 `DELETE`: Method to `delete` data from database. You must specify exist data to modify in body parameter. Http response code will be 204 whether deleted or not.
+
 `OPTIONS`: not supported yet.
+
 `HEAD`: not supported yet.
 
 ## JWT
