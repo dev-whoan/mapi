@@ -302,16 +302,44 @@ The uri for JWT is set on `default.json -> "jwt" property`. You need `generate-u
 
 # Installation
 
+## Config Direcotry Structure
+
+```
+configs
+│    default.json
+└─── controller
+│    └    rest
+│         └─── [some_jsons_for_rest_setting.json]
+└─── model
+     └─── [some_jsons_for_model_setting.json]     
+```
+
 ## Docker
 
 ### Lateset Version:: 0.0.4
 
 If you finished to set the `Prerequisites` files such that controller and model in some location with name `/path/to/configs/` (ex. `/home/mapi/configs`), you can run with following docker commands
 
-docker run -d -p 3000:[PORT] -v [/path/to/configs]:/app/configs --name mapi devwhoan/mapi
-
+```shell
+~$ mkdir -p mapi/configs
+# Copy Prerequisites configuration into configs
+~$ cd mapi
+mapi$ cp -r [/path/to/pre-configs/] ./configs
+~$ docker run -d -p 3000:[PORT] -v ./configs:/app/configs --name mapi devwhoan/mapi:0.0.4
+```
 ## Code based Nodejs
 
 If you want to modify and change some codes or whatever, download the code, and just run the nodejs.
 
 As I commented uphead, you need to set `Prerequisites` for running the node process.
+
+```shell
+~$ git clone https://github.com/dev-whoan/mapi.git
+~$ cd mapi
+# Copy Prerequisites configuration into configs
+mapi$ mkdir configs
+mapi$ cp -r [/path/to/pre-configs/] ./configs
+
+mapi$ npm install
+mapi$ npm start
+```
