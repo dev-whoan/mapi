@@ -7,15 +7,18 @@ import apiType from './enum/apiType.js';
 
 
 const controlList = [
-    "restapi", "database", "jwt"
+    "cors", "restapi", "database", "jwt"
 ]
 
 const properties = [
     [
+        'default', 'origin', 'methods', 'allow-headers'
+    ],
+    [
         'base-uri'
     ],
     [
-        'id', 'pw', 'host', 'port', 'scheme'
+        'type', 'id', 'pw', 'host', 'port', 'scheme'
     ],
     [
         'use',

@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
 
-//import homeRouter from './routes/home/index.js';
 var app = express();
 
 import { fileURLToPath } from 'url';
@@ -15,6 +14,11 @@ import ProxyWorker from './middleware/proxy/worker.js';
 import HTTP_RESPONSE from './core/enum/httpResponse.js';
 import e from 'express';
 import JwtHandler from './middleware/auth/jwtHandler.js';
+//import FileTransferConfigReader from './core/fileTransferReader.js';
+import API_TYPE from './core/enum/apiType.js';
+import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
+import { objectKeysToArray } from './core/utils.js';
+import { fail } from 'assert';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,12 +33,6 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 
-// homeRouter 연결
-// app.use('/', homeRouter);
-
-// app.use('/img', express.static(path.join(__dirname, 'public', 'img')));
-
-
 let apiConfigReader = new ApiConfigReader();
 let modelConfigReader = new ModelConfigReader();
 let baseConfigReader = new ConfigReader();
@@ -46,20 +44,52 @@ baseConfigReader.printConfigs();
 modelConfigReader.printConfigs();
 apiConfigReader.printConfigs();
 
-
 let proxyWorker = new ProxyWorker(
+    false,
     ["start", "end"],
-    `Job Name`,
+    `Rest API Model Check`,
     apiConfigReader.modelCheck,
     [],
     1
 );
 
-proxyWorker.doTask();
+await proxyWorker.doTask();
 
-console.log(jwtObject);
+const corsList = baseConfigReader.getConfig()[API_TYPE.CORS]
+if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allow-headers']){
+    throw new NullOrUndefinedException(
+        `Cannot find CORS setting in default.json. ${corsList}:: origin, default, methods, allow-headers must be defined.`
+    );
+}
 
-//API 처리를 위한 HTTP URI 설정
+if(corsList.origin.length === 1){
+    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)){
+        corsList.origin.push(corsList.default);
+    }
+}
+
+app.all('*', function(req, res, next) {
+    let origin;
+    
+    try{
+        origin = corsList.origin.includes(req.headers.origin.toLowerCase()) ? req.headers.origin : corsList.default;
+    } catch (e) {
+        origin = corsList.default;
+    }
+
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Methods", corsList.methods);
+    res.header("Access-Control-Allow-Headers", corsList['allow-headers']);
+
+    if(req.method === 'OPTIONS'){
+        return res.status(200).send();
+    }
+
+    next();
+});
+
+
+//API 처리를 위한 HTTP Router 설정
 apiConfigReader.setRouter(app);
 
 let dba = new DBAccessor();
@@ -78,10 +108,9 @@ dba.delete('test2', {
 });
 */
 
-if(jwtObject.use){
+if(jwtObject.use === "yes"){
     app.post(jwtObject['generate-uri'], async (req, res) => {
         let body = req.body;
-        console.log(body);
         let result = await dba.jwtAuthorize(
             jwtObject['auth-table'],
             jwtObject['auth-columns'],
@@ -97,8 +126,21 @@ if(jwtObject.use){
         }
         
         let _data = result[0];
+        let payloadData = {};
+        if(jwtObject.keys){
+            let _columns = objectKeysToArray(_data);
+
+            _columns.forEach( (item, index) => {
+                let temp = jwtObject.keys[item];
+                payloadData[temp] = _data[item];
+            });
+            _data = null;
+        } else {
+            payloadData = _data;
+        }
+        
         let jwtHandler = new JwtHandler();
-        jwtHandler.setPayload(_data);
+        jwtHandler.setPayload(payloadData);
         jwtHandler.generateSignature();
         let _token = jwtHandler.getJwtString();
         let msg = {
@@ -116,7 +158,7 @@ if(jwtObject.use){
         return res.status(msg.code).json(msg);
     });
 
-    app.post(jwtObject['verify-uri'], async (req, res) => {
+    app.get(jwtObject['verify-uri'], async (req, res) => {
         let token = req.headers.authorization;
         if(!token){
             return res.status(403).json({
@@ -130,7 +172,11 @@ if(jwtObject.use){
         let verifyResult = jwtHandler.verify(jwtToken);
 
         if(!verifyResult){
-            return res.status(403).send();
+            return res.status(403).json({
+                code: 403,
+                success: false,
+                message: 'Token is invalid'
+            });
         }
         
         return res.status(200).json({
@@ -140,8 +186,11 @@ if(jwtObject.use){
         });
     });
 }
+
 app.all('*', (req, res) => {
-	res.status(404).send("<h1>ERROR - 페이지를 찾을 수 없습니다.</h1>");
+    const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(`${_cip} requested unkonwn page [${req.url}]`);
+	return res.status(404).json({code: 404, message: '404 Not Found'});
 });
 
 export default app

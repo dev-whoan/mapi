@@ -20,6 +20,10 @@ export default class JwtHandler {
     }
 
     verify(token){
-        return this.jwtObject.verify(token);
+        try{
+            return this.jwtObject.verify(token);    
+        } catch (err) {
+            return false;
+        }
     }
 }
