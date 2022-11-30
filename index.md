@@ -55,12 +55,12 @@ So the file is located right under `configs/`, it will be `configs/default.json`
         "base-uri": "/"
     },
     "database": {
-        "type": "mysql"
-        "id": "RDB_ID",
-        "pw": "RDB_PW",
-        "host": "RDB_IP",
-        "port": "RDB_PORT",
-        "scheme": "RDB_SCHEME"
+        "type": "DB_TYPE"
+        "id": "DB_USER",
+        "pw": "DB_PW",
+        "host": "DB_IP",
+        "port": "DB_PORT",
+        "scheme": "DB_SCHEME|COLLECTION"
     },
     "jwt": {
         "use": "yes",
