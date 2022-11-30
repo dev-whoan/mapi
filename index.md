@@ -55,6 +55,7 @@ So the file is located right under `configs/`, it will be `configs/default.json`
         "base-uri": "/"
     },
     "database": {
+        "type": "mysql"
         "id": "RDB_ID",
         "pw": "RDB_PW",
         "host": "RDB_IP",
@@ -104,17 +105,19 @@ restapi property define essential information to use REST-API call.
 
 ### database Property
 
-database property define RDB connect information. If any of config is wrong, hence MAPI cannot connect to the database, MAPI will be shutdown with database error.
+database property define Database connect information. If any of config is wrong, hence MAPI cannot connect to the database, MAPI will be shutdown with database error.
 
-`id`: User id of RDB
+`type`: Type of Database. Now only supports MySQL, MariaDB, MongoDB. (Value: `mysql, mongo`)
 
-`password`: User password of RDB
+`id`: User id of Database
 
-`host`: Hostname of RDB
+`password`: User password of Database
 
-`port`: Port of RDB
+`host`: Hostname of Database
 
-`scheme`: Database(scheme) to use. It must be created in the RDB.
+`port`: Port of Database
+
+`scheme`: Database(scheme, collection) to use. It must be created in the Database.
 
 ### jwt Property
 
@@ -130,13 +133,13 @@ jwt property define Json Web Token settings. If your any controller require auth
 
 `secret`: Secret to create JWT Signature. IT MUST NOT BE EXPOSED.
 
-`auth-table`: Database table that must be created in RDB. JWT is issued based on user information, so this table will carry the users' information. It is used with `auth-columns`, `columns`, `keys` properties.
+`auth-table`: Database table that must be created in RDB. JWT is issued based on user information, so this table will carry the users' information. It is used with `auth-columns`, `columns`, `keys` properties. (Table is corresponded to `Collection` in `MongoDB`.)
 
 `alg`: Algorithm that is used to make JWT Signature.
 
-`columns`: Columns that generate JWT payload. These values are raw column name of `RDB -> auth-table`. For security, this columns must not be EXPOSED. The columns' names will be refactor through `keys` property.
+`columns`: Columns that generate JWT payload. These values are raw column name of `RDB -> auth-table`. For security, this columns must not be EXPOSED. The columns' names will be refactor through `keys` property. (Columns are corresponded to `field` in `MongoDB`.)
 
-`keys`: New key to refactor original `columns`. For example, based on following properties, JWT payload will have `number, nickname, contact` keys not `id, name, email`.
+`keys`: New key to refactor original `columns`. For example, based on following properties, JWT payload will have `number, nickname, contact` keys not `id, name, email`. (Columns are corresponded to `field` in `MongoDB`.)
 
 ```json
 /* EXAMPLE */
@@ -232,11 +235,15 @@ So the model is related with database. For now, only support RDB, tested on `mar
 
 It follows default knowledge with the controller.
 
-There are more properties for Model setting.
+There are more properties for Model setting. 
 
-- `id`: it is not same as general property, it is pointing table of database. it must be unique among the model setting.
-- `columns`: columns to support for rest api, which must column of database's table.
+- `id`: it is not same as general property, it is pointing table of database. it must be unique among the model setting. (Table is corresponded to `Collection` in `MongoDB`.)
+- `columns`: columns to support for rest api, which must column of database's table. (Columns are corresponded to `field` in `MongoDB`.)
 - `not-null`: not null columns for when sending request about this model. it is usually match with database's not null column.
+
+* Please be-care that, you must specify the data type for number, `long, double` in MongoDB if you use MongoDB Collection's validation.
+* In MongoDB, if you don't specify into right data type, it can bring about `Fail to Validation` Error.
+* It means, for MySQL(MariaDB), you can just right integer, float, however, it can be reason of overflow.
 
 ```json
 {
@@ -255,7 +262,6 @@ So total JSON file for Model,
 {
     "id": "user",
     "type": "model",
-    "auth": "no",
     "proxy-list": [],
     "log": "true",
     "columns": {
