@@ -1,5 +1,6 @@
 
 import ApiConfigReader from '../../core/apiReader.js';
+import configReader from '../../core/configReader.js';
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
 import ApiDataHandler from '../db/apiDataHandler.js';
@@ -162,7 +163,7 @@ export default class ApiResponser{
 
         for(let i = 0; i < modelObject.data.notNull.length; i++){
             if(!body[modelObject.data.notNull[i]]){
-                console.log(`Require column is null [${columnNotNull[i]}] and you sent`);
+                console.log(`Require column is null [${modelObject.data.notNull[i]}] and you sent`);
                 console.log(body);
                 return {
                     code: 400
@@ -172,7 +173,7 @@ export default class ApiResponser{
         /* Create Post Info */
 
         let table = modelObject.data.id;
-        return apiDataHandler.doModify(table, _columnList, _dataList, _condition);
+        return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject);
     }
 
     postApiData(body){
@@ -215,7 +216,7 @@ export default class ApiResponser{
 
         let table = modelObject.data.id;
 
-        return apiDataHandler.doInsert(table, _columnList, _dataList);
+        return apiDataHandler.doInsert(table, _columnList, _dataList, modelObject);
     }
 
     deleteApiData(body){
@@ -247,8 +248,8 @@ export default class ApiResponser{
         return msg;
     }
 
-    async post(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.postApiData(req.body);
+    async post(proxied, apiResponser, req, res, next, model){
+        let result = await apiResponser.postApiData(req.body, model);
         let _code = 201;
 
         if(!result || result.length == 0){

@@ -8,7 +8,6 @@ import ApiConfigObject from '../data/object/apiConfigObject.js';
 import ApiResponser from '../middleware/http/apiResponser.js';
 import ProxyWorker from '../middleware/proxy/worker.js';
 import ModelConfigReader from './modelReader.js';
-import { insertAt, objectKeysToArray } from './utils.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ConfigReader from './configReader.js';
 import API_TYPE from './enum/apiType.js';
@@ -93,7 +92,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 base_app.get(
                     _uri,
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                         
                         /*
@@ -124,14 +123,18 @@ export default class ApiConfigReader{
                                 code: 500,
                                 message: HTTP_RESPONSE[500]
                             };
-                        }                                                        
+                        }                       
+                        
+                        if(result.code === 200){
+                            result.size = result.data.length;
+                        }                
 //                        return result;
                         return res.status(result.code).json(result);
                     }
                 );
                 base_app.get(
                     _uri + '/*',
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                         
                         let apiResponser = new ApiResponser(_configInfo);
@@ -150,7 +153,10 @@ export default class ApiConfigReader{
                                 code: 500,
                                 message: HTTP_RESPONSE[500]
                             };
-                        }                                                        
+                        }
+                        if(result.code === 200){
+                            result.size = result.data.length;
+                        }                                                                        
 //                        return result;
                         return res.status(result.code).json(result);
                     }
@@ -160,9 +166,9 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('insert') !== -1){
                 base_app.post(
                     _uri,
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
+                        
                         let apiResponser = new ApiResponser(_configInfo);
                         let proxyWorker = new ProxyWorker(
                             _configInfo.data.auth === 'yes',
@@ -189,7 +195,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('update') !== -1){
                 base_app.put(
                     _uri,
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -215,7 +221,7 @@ export default class ApiConfigReader{
                 )
                 base_app.put(
                     _uri + '/*',
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);
@@ -244,7 +250,7 @@ export default class ApiConfigReader{
             if(_configInfo.data.dml.indexOf('delete') !== -1){
                 base_app.delete(
                     _uri,
-                    async function(req, res, next){
+                    async (req, res, next) => {
                         const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                         let apiResponser = new ApiResponser(_configInfo);

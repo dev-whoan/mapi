@@ -17,18 +17,33 @@ export default class ApiDataHandler{
         return data;
     }
 
-    async doInsert(table, columnList, dataList){
-        let result = await this.dba.insert(table, columnList, dataList);
+    async doInsert(table, columnList, dataList, modelObject){
+        let result = await this.dba.insert(table, columnList, dataList, modelObject);
         if(typeof result === 'object' && ( result.code && result.code === 200 ) ){
             return result;
         }
 
-        if(result.affectedRows){
-            let _result = {
-                '_next_id_': Number(result.insertId)
-            };
+        console.log("result ? " );
+        console.log(result);
 
-            return _result;
+        if(result.affectedRows){
+            let _result = null;
+            
+            if(result.mongo){
+                _result = {
+                    '_next_id_': result.insertedId
+                };
+
+                return _result;
+            }
+
+            if(result.mysql){
+                _result = {
+                    '_next_id_': Number(result.insertId)
+                };
+
+                return _result;
+            }
         }
 
         return {
@@ -37,8 +52,8 @@ export default class ApiDataHandler{
         };
     }
 
-    async doModify(table, columnList, dataList, condition){
-        let result = await this.dba.update(table, columnList, dataList, condition);
+    async doModify(table, columnList, dataList, condition, modelObject){
+        let result = await this.dba.update(table, columnList, dataList, condition, modelObject);
         
         if(result.affectedRows){
             let _result = {

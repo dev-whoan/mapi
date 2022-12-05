@@ -1,29 +1,23 @@
 FROM node:16.16.0
+LABEL email="dev.whoan@gmail.com"
+LABEL name="Eugene Minwhoan Kim"
+LABEL version="0.0.4"
+LABEL description="MAPI:: The Fast & Easy REST API Server in Node JS"
 
- RUN apt-get update && apt-get install -y \
- 	curl \
- 	&& rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+	curl \
+	&& rm -rf /var/lib/apt/lists/*
 
- WORKDIR /app
+WORKDIR /app
 
- COPY . .
- RUN npm install -g npm-check-updates \
- 	ncu -u \
- 	npm install \
- 	npm install express \
- 	npm install babel-cli \
- 	npm install babel-preset \
- 	npm install babel-preset-env \
- 	npm install body-parser \
-         npm install mariadb \
- 	npm install path \
- 	npm install url \
- 	npm install fs \
-	npm install crypto
+COPY . .
 
- RUN npm ci --only=production
+RUN rm package-lock.json && rm -f node_modules
+RUN npm i
 
- COPY . /app
+RUN npm ci --only=production
 
- EXPOSE 3000
- CMD [ "babel-node", "starter.js" ]
+COPY . /app
+
+EXPOSE 3000
+CMD [ "node", "starter.js" ]

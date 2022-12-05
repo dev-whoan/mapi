@@ -17,6 +17,8 @@ import JwtHandler from './middleware/auth/jwtHandler.js';
 //import FileTransferConfigReader from './core/fileTransferReader.js';
 import API_TYPE from './core/enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
+import { objectKeysToArray } from './core/utils.js';
+import { fail } from 'assert';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,7 +92,6 @@ app.all('*', function(req, res, next) {
 //API 처리를 위한 HTTP Router 설정
 apiConfigReader.setRouter(app);
 
-
 let dba = new DBAccessor();
 
 /* Initialize Check */
@@ -125,8 +126,21 @@ if(jwtObject.use === "yes"){
         }
         
         let _data = result[0];
+        let payloadData = {};
+        if(jwtObject.keys){
+            let _columns = objectKeysToArray(_data);
+
+            _columns.forEach( (item, index) => {
+                let temp = jwtObject.keys[item];
+                payloadData[temp] = _data[item];
+            });
+            _data = null;
+        } else {
+            payloadData = _data;
+        }
+        
         let jwtHandler = new JwtHandler();
-        jwtHandler.setPayload(_data);
+        jwtHandler.setPayload(payloadData);
         jwtHandler.generateSignature();
         let _token = jwtHandler.getJwtString();
         let msg = {
@@ -144,7 +158,7 @@ if(jwtObject.use === "yes"){
         return res.status(msg.code).json(msg);
     });
 
-    app.post(jwtObject['verify-uri'], async (req, res) => {
+    app.get(jwtObject['verify-uri'], async (req, res) => {
         let token = req.headers.authorization;
         if(!token){
             return res.status(403).json({
@@ -158,7 +172,11 @@ if(jwtObject.use === "yes"){
         let verifyResult = jwtHandler.verify(jwtToken);
 
         if(!verifyResult){
-            return res.status(403).send();
+            return res.status(403).json({
+                code: 403,
+                success: false,
+                message: 'Token is invalid'
+            });
         }
         
         return res.status(200).json({
