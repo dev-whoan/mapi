@@ -18,7 +18,7 @@ const properties = [
         'base-uri'
     ],
     [
-        'id', 'pw', 'host', 'port', 'scheme'
+        'type', 'id', 'pw', 'host', 'port', 'scheme'
     ],
     [
         'use',
