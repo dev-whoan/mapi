@@ -1,12 +1,8 @@
-FROM node:16.16.0
+FROM node:16-alpine
 LABEL email="dev.whoan@gmail.com"
 LABEL name="Eugene Minwhoan Kim"
 LABEL version="0.0.4"
 LABEL description="MAPI:: The Fast & Easy REST API Server in Node JS"
-
-RUN apt-get update && apt-get install -y \
-	curl \
-	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
