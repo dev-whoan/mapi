@@ -23,9 +23,6 @@ export default class ApiDataHandler{
             return result;
         }
 
-        console.log("result ? " );
-        console.log(result);
-
         if(result.affectedRows){
             let _result = null;
             

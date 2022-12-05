@@ -14,7 +14,6 @@ import ProxyWorker from './middleware/proxy/worker.js';
 import HTTP_RESPONSE from './core/enum/httpResponse.js';
 import e from 'express';
 import JwtHandler from './middleware/auth/jwtHandler.js';
-//import FileTransferConfigReader from './core/fileTransferReader.js';
 import API_TYPE from './core/enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 import { objectKeysToArray } from './core/utils.js';
