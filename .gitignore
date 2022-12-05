@@ -3,6 +3,7 @@ configs/
 configs/**
 
 # Logs
+.DS_Store
 logs
 *.log
 npm-debug.log*

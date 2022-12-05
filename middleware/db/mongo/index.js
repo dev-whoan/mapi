@@ -99,31 +99,11 @@ export default class MongoAccessor {
 
         const cursor = await _collection.find(query, options);
         let result = [];
-        /* Cursor
-        {
-            _id: ObjectId {
-                [Symbol(id)]: Buffer(12) [Uint8Array] [
-                99, 134, 198, 144,  37,
-                166,  41, 226,  38, 210,
-                235, 136
-                ]
-            },
-            NAME: 'ancient',
-            AGE: 999
-            }
-        */
+        
         await cursor.forEach((item, index) => {
             result.push(item);          
         });
-        /*
-        if( (await cursor) === 0 ){
-            return [];
-        }
-        [
-            { SEQ: 2, NAME: 'insert-test', AGE: 6 }, ...
-        ]
-        */
-
+        
         return result;
     }
 

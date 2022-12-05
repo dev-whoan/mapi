@@ -93,14 +93,16 @@ export default class MySqlAccessor{
         let conn = await pool.getConnection();
 
         let i = 0;
-        const _leng = Object.keys(condition).length;
-        for(let key in condition){
-            cond += `${key} = ? `;
-            if(i++ < _leng - 1){
-                cond += ' AND ';
+        if(condition){
+            const _leng = Object.keys(condition).length;
+            for(let key in condition){
+                cond += `${key} = ? `;
+                if(i++ < _leng - 1){
+                    cond += ' AND ';
+                }
             }
         }
-
+        
         if(!columnList){
             throw new NullOrUndefinedException(
                 `Column should be specified in [Model] for REST API`
@@ -150,11 +152,13 @@ export default class MySqlAccessor{
 
         let cond = (condition ? '' : null);
         let i = 0;
-        const _leng = Object.keys(condition).length;
-        for(let key in condition){
-            cond += `${key} = ? `;
-            if(i++ < _leng - 1){
-                cond += ' AND ';
+        if(condition){
+            const _leng = Object.keys(condition).length;
+            for(let key in condition){
+                cond += `${key} = ? `;
+                if(i++ < _leng - 1){
+                    cond += ' AND ';
+                }
             }
         }
 
@@ -214,11 +218,13 @@ export default class MySqlAccessor{
         let conn = await pool.getConnection();
         
         let i = 0;
-        const _leng = Object.keys(condition).length;
-        for(let key in condition){
-            cond += `${key} = ? `;
-            if(i++ < _leng - 1){
-                cond += ' AND ';
+        if(condition){
+            const _leng = Object.keys(condition).length;
+            for(let key in condition){
+                cond += `${key} = ? `;
+                if(i++ < _leng - 1){
+                    cond += ' AND ';
+                }
             }
         }
 
