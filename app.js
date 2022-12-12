@@ -19,7 +19,7 @@ import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 import { objectKeysToArray } from './core/utils.js';
 
 /* Http Request Handler */
-import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler } from './middleware/http/index.js';
+import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler } from './middleware/http/index.js';
 /* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,41 +35,77 @@ app.use(express.static(path.join(__dirname)));
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 
-let apiConfigReader = new ApiConfigReader();
-let filetransferConfigReader = new FileTransferConfigReader();
-let modelConfigReader = new ModelConfigReader();
-let baseConfigReader = new ConfigReader();
-let jwtObject = baseConfigReader.getConfig().jwt;
-
+/* Default */
+const baseConfigReader = new ConfigReader();
 baseConfigReader.setConfigReaders();
-
 baseConfigReader.printConfigs();
+
+/* Default */
+
+/* Model */
+const modelConfigReader = new ModelConfigReader();
 modelConfigReader.printConfigs();
-apiConfigReader.printConfigs();
-filetransferConfigReader.printConfigs();
 
-let proxyWorker = new ProxyWorker(
-    false,
-    ["start", "end"],
-    `Rest API Model Check`,
-    apiConfigReader.modelCheck,
-    [],
-    1
-);
+let dba = new DBAccessor();
 
-await proxyWorker.doTask();
+/* Initialize Check */
+let dbaInit = await dba.initTest();
+if(dbaInit != 0){
+    process.exit(dbaInit);
+}
+/* Model */
 
-proxyWorker = new ProxyWorker(
-    false,
-    ["start", "end"],
-    `File Transfer Model Check`,
-    filetransferConfigReader.modelCheck,
-    [],
-    1
-);
+/* Rest Api */
+if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig()[API_TYPE.REST].use === 'yes'){
+    const apiConfigReader = new ApiConfigReader();
+    apiConfigReader.printConfigs();
 
-await proxyWorker.doTask();
+    let proxyWorker = new ProxyWorker(
+        false,
+        ["start", "end"],
+        `Rest API Model Check`,
+        apiConfigReader.modelCheck,
+        [],
+        1
+    );
 
+    await proxyWorker.doTask();
+
+    const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
+    restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);
+}
+/* Rest Api */
+
+/* File Transfer */
+if(baseConfigReader.getConfig()[API_TYPE.FILE_TRANSFER].use && baseConfigReader.getConfig()[API_TYPE.FILE_TRANSFER].use === 'yes'){
+    const filetransferConfigReader = new FileTransferConfigReader();
+    filetransferConfigReader.printConfigs();
+
+    let proxyWorker = new ProxyWorker(
+        false,
+        ["start", "end"],
+        `File Transfer Model Check`,
+        filetransferConfigReader.modelCheck,
+        [],
+        1
+    );
+
+    await proxyWorker.doTask();
+
+    const fileTransferHttpRequestHandler = new FileTransferHttpRequestHandler(app);
+    fileTransferHttpRequestHandler.setRouter(filetransferConfigReader.configInfo);
+}
+/* File Transfer */
+
+/* JWT */
+if(baseConfigReader.getConfig()[API_TYPE.JWT].use && baseConfigReader.getConfig()[API_TYPE.JWT].use === 'yes'){
+    const jwtObject = baseConfigReader.getConfig().jwt;
+    const jwtHttpRequestHandler = new JsonWebTokenHttpRequestHandler(app);
+    jwtHttpRequestHandler.setRouter(jwtObject);
+}
+/* JWT */
+
+/* CORS */
 const corsList = baseConfigReader.getConfig()[API_TYPE.CORS]
 if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allow-headers']){
     throw new NullOrUndefinedException(
@@ -102,109 +138,7 @@ app.all('*', function(req, res, next) {
 
     next();
 });
-
-
-//API 처리를 위한 HTTP Router 설정
-const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
-restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);
-
-const fileTransferHttpRequestHandler = new FileTransferHttpRequestHandler(app);
-fileTransferHttpRequestHandler.setRouter(filetransferConfigReader.configInfo);
-
-let dba = new DBAccessor();
-
-/* Initialize Check */
-let dbaInit = await dba.initTest();
-if(dbaInit != 0){
-    process.exit(dbaInit);
-}
-/* Initialize Check */
-/*
-dba.insert('test', ['name', 'age'], ['insert-test', '6']);
-dba.select('test');
-dba.delete('test2', {
-    'title': 31
-});
-*/
-
-if(jwtObject.use === "yes"){
-    app.post(jwtObject['generate-uri'], async (req, res) => {
-        let body = req.body;
-        let result = await dba.jwtAuthorize(
-            jwtObject['auth-table'],
-            jwtObject['auth-columns'],
-            jwtObject['columns'],
-            body
-        );
-
-        if(result.length == 0){
-            return res.status(401).json({
-                code: 401,
-                message: HTTP_RESPONSE[401]
-            });
-        }
-        
-        let _data = result[0];
-        let payloadData = {};
-        if(jwtObject.keys){
-            let _columns = objectKeysToArray(_data);
-
-            _columns.forEach( (item, index) => {
-                let temp = jwtObject.keys[item];
-                payloadData[temp] = _data[item];
-            });
-            _data = null;
-        } else {
-            payloadData = _data;
-        }
-        
-        let jwtHandler = new JwtHandler();
-        jwtHandler.setPayload(payloadData);
-        jwtHandler.generateSignature();
-        let _token = jwtHandler.getJwtString();
-        let msg = {
-            code: 200,
-            success: true,
-            token: _token
-        };
-        if(!_token){
-            msg = {
-                code: 500,
-                success: false
-            };
-        };
-
-        return res.status(msg.code).json(msg);
-    });
-
-    app.get(jwtObject['verify-uri'], async (req, res) => {
-        let token = req.headers.authorization;
-        if(!token){
-            return res.status(403).json({
-                success: false,
-                message: 'Authentication failed'
-            });
-        }
-
-        let jwtToken = token.split(" ")[1];
-        let jwtHandler = new JwtHandler();
-        let verifyResult = jwtHandler.verify(jwtToken);
-
-        if(!verifyResult){
-            return res.status(403).json({
-                code: 403,
-                success: false,
-                message: 'Token is invalid'
-            });
-        }
-        
-        return res.status(200).json({
-            code: 200,
-            success: true,
-            message: 'Token is valid'
-        });
-    });
-}
+/* CORS */
 
 app.all('*', (req, res) => {
     const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;

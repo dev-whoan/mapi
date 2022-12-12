@@ -54,8 +54,6 @@ export default class JwtConfigObject{
             this.payloadObject[_keyArray[i]] = _value[i];
         }
         this.payload = stringToBase64UrlSafe(JSON.stringify(this.payloadObject));
-        console.log('payload');
-        console.log(this.payloadObject);
     }
 
     generateSignature(){
@@ -70,8 +68,6 @@ export default class JwtConfigObject{
             _data,
             this.baseObject.secret
         );
-
-        console.log("sign: ", this.signature);
     }
 
     getJwtString(){
@@ -104,7 +100,6 @@ export default class JwtConfigObject{
         let _data = _header + "." + _payload;
         let _sign = hmac256(_data, this.baseObject.secret);
         if(_sign !== _signature){
-            console.log("sign invalid");
             return false;
         }
         

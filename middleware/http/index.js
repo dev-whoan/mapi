@@ -1,6 +1,9 @@
 import ConfigReader from "../../core/configReader.js";
 import API_TYPE from "../../core/enum/apiType.js";
 import HTTP_RESPONSE from "../../core/enum/httpResponse.js";
+import { objectKeysToArray } from "../../core/utils.js";
+import JwtHandler from "../auth/jwtHandler.js";
+import DBAccessor from "../db/accessor.js";
 import ProxyWorker from "../proxy/worker.js";
 import ApiResponser from "./apiResponser.js";
 
@@ -242,6 +245,104 @@ class FileTransferHttpRequestHandler {
     }
 }
 
+class JsonWebTokenHttpRequestHandler {
+    static jsonWebTokenHttpRequestHandlerInstance;
+    constructor(app){
+        if(JsonWebTokenHttpRequestHandler.instance)  return JsonWebTokenHttpRequestHandler.jsonWebTokenHttpRequestHandlerInstance;
+        this.app = app;
+        JsonWebTokenHttpRequestHandler.jsonWebTokenHttpRequestHandlerInstance = this;
+    }
+
+    post(jwtObject){
+        this.app.post(jwtObject['generate-uri'], async (req, res) => {
+            let dba = new DBAccessor();
+            let body = req.body;
+            let result = await dba.jwtAuthorize(
+                jwtObject['auth-table'],
+                jwtObject['auth-columns'],
+                jwtObject['columns'],
+                body
+            );
+    
+            if(result.length == 0){
+                return res.status(401).json({
+                    code: 401,
+                    message: HTTP_RESPONSE[401]
+                });
+            }
+            
+            let _data = result[0];
+            let payloadData = {};
+            if(jwtObject.keys){
+                let _columns = objectKeysToArray(_data);
+    
+                _columns.forEach( (item, index) => {
+                    let temp = jwtObject.keys[item];
+                    payloadData[temp] = _data[item];
+                });
+                _data = null;
+            } else {
+                payloadData = _data;
+            }
+            
+            let jwtHandler = new JwtHandler();
+            jwtHandler.setPayload(payloadData);
+            jwtHandler.generateSignature();
+            let _token = jwtHandler.getJwtString();
+            let msg = {
+                code: 200,
+                success: true,
+                token: _token
+            };
+            if(!_token){
+                msg = {
+                    code: 500,
+                    success: false
+                };
+            };
+    
+            return res.status(msg.code).json(msg);
+        });
+    }
+
+    get(jwtObject){
+        this.app.get(jwtObject['verify-uri'], async (req, res) => {
+            let token = req.headers.authorization;
+            if(!token){
+                return res.status(403).json({
+                    success: false,
+                    message: 'Authentication failed'
+                });
+            }
+    
+            let jwtToken = token.split(" ")[1];
+            let jwtHandler = new JwtHandler();
+            let verifyResult = jwtHandler.verify(jwtToken);
+    
+            if(!verifyResult){
+                return res.status(403).json({
+                    code: 403,
+                    success: false,
+                    message: 'Token is invalid'
+                });
+            }
+            
+            return res.status(200).json({
+                code: 200,
+                success: true,
+                message: 'Token is valid'
+            });
+        });
+    }
+    
+    setRouter(jwtObject){
+        if(jwtObject.use !== "yes") return;
+    
+        this.post(jwtObject);
+        this.get(jwtObject);    
+    }
+}
+
 export {
-    RestApiHttpRequestHandler, FileTransferHttpRequestHandler
+    RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler
 }

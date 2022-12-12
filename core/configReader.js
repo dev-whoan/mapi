@@ -21,7 +21,7 @@ const properties = [
         'default', 'origin', 'methods', 'allow-headers'
     ],
     [
-        'base-uri'
+        'use', 'base-uri'
     ],
     [
         'type', 'id', 'pw', 'host', 'port', 'scheme'
@@ -38,6 +38,7 @@ const properties = [
         'keys'
     ],
     [
+        'use',
         'type',
         'base-uri',
         'base-directory',
