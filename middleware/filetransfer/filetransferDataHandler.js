@@ -1,20 +1,36 @@
-import FileTransferConfigObject from "../../data/object/filetransferConfigObject";
-import FileController from "./fileController";
+import FileTransferConfigObject from "../../data/object/filetransferConfigObject.js";
+import FileController from "./fileController.js";
 
 export default class FileTransferDataHandler {
     constructor(){
         this.controller = new FileController();
     }
 
-    async doWrite(uri, body, fileInfo){
+/*
+    let result = await this.dba.select(table, columnList, condition);
+    
+    let data = [];
+    for(let i = 0; i < result.length; i++){
+        data.push(result[i]);
+    }
+    
+    return data;
+*/
+
+    async doWrite(req, fileInfo, modelObject){
+        console.log(fileInfo);
+        console.log(modelObject);
+
+        this.controller.writeFile(req, fileInfo, modelObject);
+
+        return null;
+    }
+
+    async doRead(req, fileInfo, modelObject){
 
     }
 
-    async doRead(uri, body){
-
-    }
-
-    async doDelete(uri, body){
+    async doDelete(req, fileInfo, modelObject){
 
     }
 }

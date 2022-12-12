@@ -1,72 +1,69 @@
-import FileTransferConfigObject from "../../data/object/filetransferConfigObject";
+import FileTransferConfigObject from "../../data/object/filetransferConfigObject.js";
 
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
 import { arrayToObject, objectKeysToArray } from '../../core/utils.js';
+import FileTransferDataHandler from "../filetransfer/filetransferDataHandler.js";
+import ConfigReader from "../../core/configReader.js";
+import API_TYPE from "../../core/enum/apiType.js";
 
 export default class FileTransferResponser{
     constructor(fileTransferConfigObject){
         this.fileTransferConfigObject = fileTransferConfigObject;
-        this.configId = this.fileTransferConfigObject.data.directory + '@' + this.apiConfigObject.data.id;
+        this.configId = this.fileTransferConfigObject.data.directory + '@' + this.fileTransferConfigObject.data.id;
         this.originalUri = this.fileTransferConfigObject.data.id;
     }
 
-    async get(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.getApiData(req.originalUrl);
-        let _code = 200;
-        if(!result || result.length == 0){
-            _code = 204;
-        } else if(result && result.code == 400){
-            _code = 400;
-        }
-        
-        let msg = {
-            message: HTTP_RESPONSE[_code] ,
-            data: result,
-            code: _code
-        };
+    /*
+    let msg = {
+        message: HTTP_RESPONSE[204] ,
+        data: result,
+        code: 204
+    };
 
-        return msg;
+    return msg;
+    */
+
+    async getFile(req){
+
+    }
+
+    async get(proxied, apiResponser, req, res, next){
+        
+        return null;
+    }
+
+    async postFileCreate(req){
+        console.log(this.fileTransferConfigObject.data);
+        let fileTransferHandler = new FileTransferDataHandler();
+        let modelConfigReader = new ModelConfigReader();
+
+        let model = this.fileTransferConfigObject.data.customDatabase ? 
+            this.fileTransferConfigObject.data.customDatabase.model :
+            ConfigReader.instance.getConfig()[API_TYPE.FILE_TRANSFER].table;
+        let modelObject = modelConfigReader.getConfig(model);
+        console.log("model: ", model)
+        
+        console.log(modelObject);
+
+        fileTransferHandler.doWrite(req, this.fileTransferConfigObject.data, modelObject);
+
     }
 
     async post(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.postApiData(req.body);
-        let _code = 201;
+        let result = await apiResponser.postFileCreate(req);
 
-        if(!result || result.length == 0){
-            _code = 204;
-        } else if(result && result.code == 400){
-            _code = 400;
-        }
 
-        let msg = {
-            message: HTTP_RESPONSE[_code] ,
-            data: result,
-            code: _code
-        };
+        return null;
+    }
 
-        if(result.code === 200){
-            msg.code = 200;
-            msg.message = "Content Already Exist";
-            msg.data.message = "Content Already Exist";
-        } else if(result.code === 204){
-            msg.code = 204;
-            msg.message = HTTP_RESPONSE[204];
-            msg.data.message = HTTP_RESPONSE[204];
-        }
+    async deleteFile(req){
 
-        return msg;
     }
 
     async delete(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.deleteApiData(req.body);
         
-        let msg = {
-            message: HTTP_RESPONSE[204] ,
-            data: result,
-            code: 204
-        };
-
-        return msg;
+        
+        return null;
     }
 }

@@ -241,7 +241,6 @@ export default class ApiResponser{
             code: _code
         };
 
-//        return res.status(msg.code).json(msg);
         return msg;
     }
 
@@ -271,7 +270,6 @@ export default class ApiResponser{
             msg.data.message = HTTP_RESPONSE[204];
         }
 
-//        return res.status(msg.code).json(msg);
         return msg;
     }
 
@@ -290,7 +288,6 @@ export default class ApiResponser{
             code: _code
         };
 
-//        return res.status(msg.code).json(msg);
         return msg;
     }
 
@@ -303,7 +300,6 @@ export default class ApiResponser{
             code: 204
         };
 
-//        return res.status(200).json(msg);
         return msg;
     }
 }

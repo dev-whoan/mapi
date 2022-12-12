@@ -6,8 +6,8 @@ import DB_TYPE from '../../core/enum/dbType.js';
 
 export default class DBAccessor {
     constructor(){
-        this.dbType = configReader.instance.getConfig().database.type;
-        switch(this.dbType){
+        this.type = configReader.instance.getConfig().database.type;
+        switch(this.type){
             case DB_TYPE.MYSQL:
                 this.operator = new MysqlAccessor();
                 break;
@@ -17,7 +17,7 @@ export default class DBAccessor {
             default:
                 this.operator = null;
                 throw new UnknownDatabaseAccessorException(
-                    `Unknown Database Accessor was requested to be set.[${dbType}]`
+                    `Unknown Database Accessor was requested to be set.[${type}]`
                 );
         }
     }

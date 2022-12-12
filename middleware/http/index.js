@@ -6,6 +6,7 @@ import JwtHandler from "../auth/jwtHandler.js";
 import DBAccessor from "../db/accessor.js";
 import ProxyWorker from "../proxy/worker.js";
 import ApiResponser from "./apiResponser.js";
+import FileTransferResponser from "./fileTransferResponser.js";
 
 class RestApiHttpRequestHandler {
     static restApiHttpRequestHandlerInstance;
@@ -229,6 +230,41 @@ class FileTransferHttpRequestHandler {
         FileTransferHttpRequestHandler.fileTransferHttpRequestHandlerInstance = this;
     }
 
+    post(uri, configInfo){
+        this.app.post(uri, async (req, res, next) => {
+            const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+            let fileTransferResponser = new FileTransferResponser(configInfo);
+            let proxyWorker = new ProxyWorker(
+                configInfo.data.auth === 'yes',
+                ["start", "end"],
+                `File Transfer Worker - [GET]${configInfo.data.directory}@${configInfo.data.id}(${_cip})`,
+                fileTransferResponser.post,
+                [true, fileTransferResponser, req, res, next],
+                1
+            );
+            
+            let result = await proxyWorker.doTask(req, res);
+
+            if(!result || !result.code){
+                result = {
+                    code: 500,
+                    message: HTTP_RESPONSE[500]
+                };
+            }                       
+            
+            return res.status(result.code).json(result);         
+        });
+    }
+
+    delete(configInfo){
+
+    }
+
+    get(configInfo){
+
+    }
+
     setRouter(configInfo){
         let URIs = configInfo.keys();
         let uri;
@@ -238,9 +274,30 @@ class FileTransferHttpRequestHandler {
 
         while( (uri = URIs.next().value) ){
             let rawUri = uri.toString().split('@');
-            let _uri = baseUri + rawUri[0] + '/' + rawUri[1];
+            let _uri = `${baseUri}/${rawUri[1]}`;
             let _configInfo = configInfo.get(uri);
-//            console.log(_configInfo);
+            /*
+              _configInfo.data => {
+                id: 'board',
+                type: 'file-transfer',
+                auth: 'yes',
+                proxyList: null,
+                proxyOrder: null,
+                log: 'debug',
+                directory: '/board',
+                extension: [ 'jpg', 'jpeg', 'png', 'gif' ],
+                customDatabase: {
+                model: 'MAPI_BOARD',
+                'parent-path': 'parent',
+                'file-name': 'file',
+                timestamp: 'timestamp',
+                owner: 'owner'
+                }
+            }
+  */
+            this.post(_uri, _configInfo);
+            this.delete(_uri, _configInfo);
+            this.get(_uri, _configInfo);
         }
     }
 }
