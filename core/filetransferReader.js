@@ -51,13 +51,13 @@ export default class FileTransferConfigReader{
                 jsonData['custom-database']
             );
             
-            if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
+            if(oneObject.data.directory.includes('@') || oneObject.data.id.includes ('@')){
                 console.warn(`Attribute [uri] and [id] must not include '@' word.`);
                 console.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
                 return;
             }
 
-            let configId = oneObject.data.uri + '@' + oneObject.data.id;
+            let configId = oneObject.data.directory + '@' + oneObject.data.id;
             if(this.configInfo.get(configId)){
                 console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
                 console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
@@ -82,15 +82,17 @@ export default class FileTransferConfigReader{
         
         while( (_key = keys.next().value) ){
             let oneObject = _configInfo.get(_key);
-            let modelId = oneObject.data.model;
+            if(!oneObject.data.customDatabase)  continue;
+
+            let modelId = oneObject.data.customDatabase.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`Model [${modelId}] checking...`);
+            console.log(`** Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`Model [${modelId}] Ok!`);
+            console.log(`** Model [${modelId}] Ok!`);
         }
     }
 

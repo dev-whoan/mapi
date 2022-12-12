@@ -2,21 +2,22 @@ import configReader from '../../core/configReader.js';
 import MysqlAccessor from './mysql/index.js';
 import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
+import DB_TYPE from '../../core/enum/dbType.js';
 
 export default class DBAccessor {
     constructor(){
         this.dbType = configReader.instance.getConfig().database.type;
         switch(this.dbType){
-            case 'mysql':
+            case DB_TYPE.MYSQL:
                 this.operator = new MysqlAccessor();
                 break;
-            case 'mongo':
+            case DB_TYPE.MONGO:
                 this.operator = new MongoAccessor();
                 break;
             default:
                 this.operator = null;
                 throw new UnknownDatabaseAccessorException(
-                    `Unknown Database Accessor Have Set:: ${dbType}`
+                    `Unknown Database Accessor was requested to be set.[${dbType}]`
                 );
         }
     }

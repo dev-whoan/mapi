@@ -1,8 +1,14 @@
 import InappropriateConfigKeyException from '../exception/inappropriateConfigKeyException.js';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
+import { readFile } from 'fs/promises';
+//import generalInfo from '../configs/default.json' assert {type: "json"};
+const generalInfo = JSON.parse(
+  await readFile(
+    new URL('../configs/default.json', import.meta.url)
+  )
+);
 
 import ApiReader from './apiReader.js';
-import generalInfo from '../configs/default.json' assert {type: "json"};
 import apiType from './enum/apiType.js';
 
 
@@ -32,6 +38,7 @@ const properties = [
         'keys'
     ],
     [
+        'type',
         'base-uri',
         'base-directory',
         'table',

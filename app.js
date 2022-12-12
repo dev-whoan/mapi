@@ -6,18 +6,21 @@ var app = express();
 
 import { fileURLToPath } from 'url';
 import ApiConfigReader from './core/apiReader.js';
+import FileTransferConfigReader from './core/filetransferReader.js';
 import ConfigReader from './core/configReader.js';
 import ModelConfigReader from './core/modelReader.js';
+
 import DBAccessor from './middleware/db/accessor.js';
-import { exit } from 'process';
 import ProxyWorker from './middleware/proxy/worker.js';
 import HTTP_RESPONSE from './core/enum/httpResponse.js';
-import e from 'express';
 import JwtHandler from './middleware/auth/jwtHandler.js';
 import API_TYPE from './core/enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 import { objectKeysToArray } from './core/utils.js';
-import { fail } from 'assert';
+
+/* Http Request Handler */
+import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler } from './middleware/http/index.js';
+/* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,6 +36,7 @@ app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 
 let apiConfigReader = new ApiConfigReader();
+let filetransferConfigReader = new FileTransferConfigReader();
 let modelConfigReader = new ModelConfigReader();
 let baseConfigReader = new ConfigReader();
 let jwtObject = baseConfigReader.getConfig().jwt;
@@ -42,12 +46,24 @@ baseConfigReader.setConfigReaders();
 baseConfigReader.printConfigs();
 modelConfigReader.printConfigs();
 apiConfigReader.printConfigs();
+filetransferConfigReader.printConfigs();
 
 let proxyWorker = new ProxyWorker(
     false,
     ["start", "end"],
     `Rest API Model Check`,
     apiConfigReader.modelCheck,
+    [],
+    1
+);
+
+await proxyWorker.doTask();
+
+proxyWorker = new ProxyWorker(
+    false,
+    ["start", "end"],
+    `File Transfer Model Check`,
+    filetransferConfigReader.modelCheck,
     [],
     1
 );
@@ -89,7 +105,11 @@ app.all('*', function(req, res, next) {
 
 
 //API 처리를 위한 HTTP Router 설정
-apiConfigReader.setRouter(app);
+const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
+restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);
+
+const fileTransferHttpRequestHandler = new FileTransferHttpRequestHandler(app);
+fileTransferHttpRequestHandler.setRouter(filetransferConfigReader.configInfo);
 
 let dba = new DBAccessor();
 
