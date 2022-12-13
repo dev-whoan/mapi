@@ -84,7 +84,6 @@ export default class ApiResponser{
                             code: 400
                         };
                     }
-                    console.log(Number(_requestConditions[i+1]));
                     paging.lastIndex = _requestConditions[i+1] > 1 ? 
                         _requestConditions[i+1] : 
                         0;
@@ -275,7 +274,6 @@ export default class ApiResponser{
 
             const prevAiVal = result[0][apiResponser.apiConfigObject.data.autoIncrement] - CONFIG_PAGING_COUNT;
             
-            console.log(prevAiVal);
             prevUri = prevAiVal > 0 ?
                  `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/${prevAiVal}` :
                  `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/1`;

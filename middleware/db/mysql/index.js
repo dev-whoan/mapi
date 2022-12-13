@@ -121,7 +121,6 @@ export default class MySqlAccessor{
         if(condition){
             const _leng = Object.keys(condition).length;
             for(let key in condition){
-                console.log(key, paging.uri);
                 if(key == paging.uri) {
                     condition[key] = paging.lastIndex;
                     continue;
@@ -134,7 +133,6 @@ export default class MySqlAccessor{
         }
 
         if(paging.lastIndex){
-            console.log(cond);
             if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
                 cond += ' AND ';
             }
@@ -243,8 +241,6 @@ export default class MySqlAccessor{
             conn.close();
             conn.end();
         }
-
-        console.log(result);
 
         return result;
     }

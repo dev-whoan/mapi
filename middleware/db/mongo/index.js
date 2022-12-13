@@ -1,9 +1,10 @@
 import PROCESS_EXIT_CODE from "../../../core/enum/processExitCode.js";
-import { MongoClient, Long, Double } from "mongodb";
+import { MongoClient, Long, Double, ObjectID, ObjectId } from "mongodb";
 import ConfigReader from '../../../core/configReader.js';
 import NullOrUndefinedException from "../../../exception/nullOrUndefinedException.js";
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
 import { objectKeysToArray } from "../../../core/utils.js";
+import ModelConfigReader from "../../../core/modelReader.js";
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -41,29 +42,10 @@ export default class MongoAccessor {
         return 0;
     }
 
-    async setAutoIncrement(table){
-        let conn = await pool.getConnection();
-        const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
-
-        if(result[0]){
-            conn.close();
-            conn.end();
-            return result[0];
-        }
-
-        const createAI = await conn.query(
-            `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
-        );
-
-        if(createAI[0]){
-            conn.close();
-            conn.end();
-            return createAI[0];
-        }
-
-        throw new AutoIncrementUndefinedException(
-            `No Auto Increment Column Detected in Table ${table}. MAPI tried to create the column manually, but it failed.`
-        );
+    async setAutoIncrement(collection){
+        return {
+            COLUMN_NAME: '_id'
+        };
     }
 
     async jwtAuthorize(collection, keyFields, selectFields, body){
@@ -107,15 +89,47 @@ export default class MongoAccessor {
 
         const _collection = this.client.db(dbInfo.scheme).collection(collection);
         
-        const query = condition ? condition : null;
-        const options = {};
-        const count = query ? await _collection.countDocuments() : await _collection.countDocuments(query, options);
+        if(condition && condition.page)  delete condition.page;
+        const query = condition ? condition : {};
+        /*
+            {
+                _id: {
+                    $gt: ObjectId(id)
+                }
+            }
+        */
+        const modelObject = ModelConfigReader.instance.getConfig(collection);
+        
+        for(let key in condition){
+            if(modelObject.data.columns[key] === 'integer'){
+                query[key] = parseInt(condition[key]);
+                continue;
+            }
+            if(modelObject.data.columns[key] === 'long'){
+                query[key] = new Long(condition[key]);
+                continue;
+            }
 
+            if(modelObject.data.columns[key] === 'float'){
+                query[key] = parseFloat(condition[key]);
+                continue;
+            }
+            if(modelObject.data.columns[key] === 'double'){
+                query[key] = new Double(condition[key]);
+                continue;
+            }
+
+        }
+
+        const options = {};
+        const count = await _collection.countDocuments(query, options);
+        
         if(count === 0){
             return [];
         }
 
-        const cursor = await _collection.find(query, options);
+        const _skipIndex = paging.lastIndex >= 1 ? paging.lastIndex-1 : 0;
+        const cursor = await _collection.find(query, options).skip(_skipIndex * paging.count).limit(paging.count);
         let result = [];
         
         await cursor.forEach((item, index) => {
@@ -150,10 +164,13 @@ export default class MongoAccessor {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
             if(sn){
-                if(sn === 'long'){
+                if(sn === 'integer'){
+                    value = parseInt(value);
+                } else if(sn === 'long'){
                     value = new Long(value);
-                }
-                else if(sn === 'double'){
+                } else if(sn === 'float'){
+                    value = parseFloat(value);
+                } else if(sn === 'double'){
                     value = new Double(value);
                 }
             }
@@ -244,10 +261,13 @@ export default class MongoAccessor {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
             if(sn){
-                if(sn === 'long'){
+                if(sn === 'integer'){
+                    value = parseInt(value);
+                } else if(sn === 'long'){
                     value = new Long(value);
-                }
-                else if(sn === 'double'){
+                } else if(sn === 'float'){
+                    value = parseFloat(value);
+                } else if(sn === 'double'){
                     value = new Double(value);
                 }
             }
