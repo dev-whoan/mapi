@@ -5,13 +5,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiConfigObject from '../data/object/apiConfigObject.js';
-import ApiResponser from '../middleware/http/apiResponser.js';
-import ProxyWorker from '../middleware/proxy/worker.js';
 import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
-import ConfigReader from './configReader.js';
-import API_TYPE from './enum/apiType.js';
-import HTTP_RESPONSE from './enum/httpResponse.js';
+import DBAccessor from '../middleware/db/accessor.js';
+import { stringToBase64 } from './utils.js';
+import AutoIncrementUndefinedException from '../exception/autoIncrementUndefinedException.js';
+import MySqlAccessor from '../middleware/db/mysql/index.js';
+import MongoAccessor from '../middleware/db/mongo/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -50,7 +50,9 @@ export default class ApiConfigReader{
                 jsonData.log,
                 jsonData.uri,
                 jsonData.model,
-                jsonData.dml
+                jsonData.dml,
+                jsonData.count,
+                jsonData['paging-uri']
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
@@ -64,9 +66,39 @@ export default class ApiConfigReader{
                 console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
                 console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
             }
+            
             this.configInfo.set(configId, oneObject);
+            
+            this.setAutoIncrement(configId);
+            console.log(this.configInfo.get(configId));
         });
     };
+
+    async setAutoIncrement(configId){
+        let configInfo = this.configInfo.get(configId);
+        let modelConfigReader = new ModelConfigReader();
+        let model = configInfo.data.model;
+
+        let modelObject = modelConfigReader.getConfig(model);
+        let table = modelObject.data.id;
+
+        let dba = new DBAccessor();
+        let aiColumn = await dba.setAutoIncrement(table);
+        if(!aiColumn || !(aiColumn.COLUMN_NAME)){
+            throw new AutoIncrementUndefinedException(
+                `No Auto Increment Column Detected in Table ${model}. MAPI tried to create the column manually, but it failed.`
+            );
+        }
+
+        if(dba instanceof MySqlAccessor){
+            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
+        }
+        if(dba instanceof MongoAccessor){
+//            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
+        }
+        configInfo.data.autoIncrement = aiColumn.COLUMN_NAME;
+        this.configInfo.set(configId, configInfo);
+    }
 
     getConfig(key){
         return this.configInfo.get(key);

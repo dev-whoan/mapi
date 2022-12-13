@@ -1,5 +1,3 @@
-import { get } from "http";
-
 export default class BaseConfigData{
     constructor(id, type, auth, proxyList, proxyOrder, log){
         this.id = id;

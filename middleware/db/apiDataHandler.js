@@ -6,8 +6,8 @@ export default class ApiDataHandler{
         this.dba = new DBAccessor();
     }
 
-    async doSelect(table, columnList, condition){
-        let result = await this.dba.select(table, columnList, condition);
+    async doSelect(table, columnList, condition, paging){
+        let result = await this.dba.select(table, columnList, condition, paging);
     
         let data = [];
         for(let i = 0; i < result.length; i++){

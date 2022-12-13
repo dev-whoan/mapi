@@ -2,6 +2,8 @@ import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
 import ApiDataHandler from '../db/apiDataHandler.js';
 import { objectKeysToArray } from '../../core/utils.js';
+import ConfigReader from '../../core/configReader.js';
+import API_TYPE from '../../core/enum/apiType.js';
 
 export default class ApiResponser{
     constructor(apiConfigObject){
@@ -67,16 +69,32 @@ export default class ApiResponser{
             };
         }
         let _condition = null;
+        const paging = {
+            uri: this.apiConfigObject.data.pagingUri.replaceAll('/', ''),
+            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count
+        };
 
         if(_requestConditions.length !== 0){
             _condition = {};
 
             for(let i = 0; i < _requestConditions.length; i += 2){
+                if(_requestConditions[i] === paging.uri){
+                    if(isNaN(Number(_requestConditions[i+1])) || _requestConditions[i+1] <= 0){
+                        return {
+                            code: 400
+                        };
+                    }
+                    console.log(Number(_requestConditions[i+1]));
+                    paging.lastIndex = _requestConditions[i+1] > 1 ? 
+                        _requestConditions[i+1] : 
+                        0;
+                    paging.autoIncrement = this.apiConfigObject.data.autoIncrement;
+                }
                 _condition[_requestConditions[i]] = _requestConditions[i+1];
             }
             
             for(let key in _condition){
-                if(!modelObject.data.columns[key]){
+                if(!modelObject.data.columns[key] && key !== paging.uri ){
                     console.log(`Model does not have the request column [${key}]`);
                     return {
                         code: 400
@@ -94,7 +112,7 @@ export default class ApiResponser{
                 _columns += ', '
         })
 
-        return apiDataHandler.doSelect(table, _columns, _condition);
+        return apiDataHandler.doSelect(table, _columns, _condition, paging);
     }
 
     putApiData(uri, body){
@@ -234,11 +252,41 @@ export default class ApiResponser{
         } else if(result && result.code == 400){
             _code = 400;
         }
+
+        const CONFIG_PAGING_COUNT = ConfigReader.instance.getConfig()[API_TYPE.REST].count;
+        let nextUri = null, prevUri = null;
         
+        if(result instanceof Array && result.length != 0){
+            const aiColumn = apiResponser.apiConfigObject.data.autoIncrement;
+            result.sort((a, b) => { 
+                return a[aiColumn] > b[aiColumn] ? 1 : -1
+            })
+
+            let __prefix = req.originalUrl.split('/');
+            let announcePagingUriPrefix = req.originalUrl;
+            if(__prefix.indexOf(apiResponser.apiConfigObject.data.pagingUri.replaceAll('/', '')) !== -1){
+                
+                __prefix.splice(__prefix.indexOf(apiResponser.apiConfigObject.data.pagingUri)-1, 2);
+                announcePagingUriPrefix = __prefix.join('/');
+            }
+            
+            nextUri =  result.length < CONFIG_PAGING_COUNT ? null :
+                    `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/${(result[result.length-1][apiResponser.apiConfigObject.data.autoIncrement] + 1)}`;
+
+            const prevAiVal = result[0][apiResponser.apiConfigObject.data.autoIncrement] - CONFIG_PAGING_COUNT;
+            
+            console.log(prevAiVal);
+            prevUri = prevAiVal > 0 ?
+                 `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/${prevAiVal}` :
+                 `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/1`;
+        }
+
         let msg = {
             message: HTTP_RESPONSE[_code] ,
             data: result,
-            code: _code
+            code: _code,
+            'next-uri': nextUri,
+            'prev-uri': prevUri
         };
 
         return msg;

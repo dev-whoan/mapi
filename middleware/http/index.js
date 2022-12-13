@@ -257,12 +257,18 @@ class FileTransferHttpRequestHandler {
         });
     }
 
-    delete(configInfo){
+    delete(uri, configInfo){
 
     }
 
     get(configInfo){
+        let baseConfig = ConfigReader.instance.getConfig();
+        let baseUri = (baseConfig[API_TYPE.FILE_TRANSFER])['read-uri'];
+        baseUri = (baseUri === '/' ? '' : baseUri);
+        baseUri += `/${configInfo.data.id}`;
 
+        console.log(baseUri);
+        console.log(configInfo);
     }
 
     setRouter(configInfo){
@@ -276,28 +282,9 @@ class FileTransferHttpRequestHandler {
             let rawUri = uri.toString().split('@');
             let _uri = `${baseUri}/${rawUri[1]}`;
             let _configInfo = configInfo.get(uri);
-            /*
-              _configInfo.data => {
-                id: 'board',
-                type: 'file-transfer',
-                auth: 'yes',
-                proxyList: null,
-                proxyOrder: null,
-                log: 'debug',
-                directory: '/board',
-                extension: [ 'jpg', 'jpeg', 'png', 'gif' ],
-                customDatabase: {
-                model: 'MAPI_BOARD',
-                'parent-path': 'parent',
-                'file-name': 'file',
-                timestamp: 'timestamp',
-                owner: 'owner'
-                }
-            }
-  */
             this.post(_uri, _configInfo);
             this.delete(_uri, _configInfo);
-            this.get(_uri, _configInfo);
+            this.get(_configInfo);
         }
     }
 }

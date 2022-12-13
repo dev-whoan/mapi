@@ -48,7 +48,8 @@ export default class FileTransferConfigReader{
                 jsonData.log,
                 jsonData.directory,
                 jsonData.extension,
-                jsonData['custom-database']
+                jsonData['custom-database'],
+                jsonData.count
             );
             
             if(oneObject.data.directory.includes('@') || oneObject.data.id.includes ('@')){

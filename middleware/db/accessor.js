@@ -22,6 +22,10 @@ export default class DBAccessor {
         }
     }
 
+    async setAutoIncrement(table){
+        return this.operator.setAutoIncrement(table);
+    }
+
     async initTest(){
         return this.operator.initTest();
     }
@@ -30,8 +34,8 @@ export default class DBAccessor {
         return this.operator.jwtAuthorize(table, keyColumns, selectColumns, body);
     }
 
-    async select(table, columnList, condition){
-        return this.operator.select(table, columnList, condition)
+    async select(table, columnList, condition, paging){
+        return this.operator.select(table, columnList, condition, paging)
     }
 
     async update(table, columnList, dataList, condition, modelObject){

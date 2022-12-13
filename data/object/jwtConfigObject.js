@@ -1,6 +1,5 @@
 import ConfigReader from '../../core/configReader.js';
-import baseConfigObj from './baseConfigObject.js';
-import { base64ToString, stringToBase64UrlSafe, objectValuesToArray, objectKeysToArray, hmac256, base64UrlSafeToString } from '../../core/utils.js';
+import { stringToBase64UrlSafe, objectValuesToArray, objectKeysToArray, hmac256, base64UrlSafeToString } from '../../core/utils.js';
 import NullOrUndefinedException from '../../exception/nullOrUndefinedException.js';
 import InvalidJwtTokenException from '../../exception/InvalidJwtTokenException.js';
 

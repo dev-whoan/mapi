@@ -41,12 +41,30 @@ export default class MongoAccessor {
         return 0;
     }
 
-    /*
-        return example
-        [
-            { SEQ: 2, NAME: 'insert-test', AGE: 6 }, ...
-        ]
-    */
+    async setAutoIncrement(table){
+        let conn = await pool.getConnection();
+        const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
+
+        if(result[0]){
+            conn.close();
+            conn.end();
+            return result[0];
+        }
+
+        const createAI = await conn.query(
+            `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
+        );
+
+        if(createAI[0]){
+            conn.close();
+            conn.end();
+            return createAI[0];
+        }
+
+        throw new AutoIncrementUndefinedException(
+            `No Auto Increment Column Detected in Table ${table}. MAPI tried to create the column manually, but it failed.`
+        );
+    }
 
     async jwtAuthorize(collection, keyFields, selectFields, body){
         if(!collection || !keyFields){
@@ -80,7 +98,7 @@ export default class MongoAccessor {
         return result;
     }
 
-    async select(collection, fieldList, condition){
+    async select(collection, fieldList, condition, paging){
         if(!fieldList){
             throw new NullOrUndefinedException(
                 `Column should be specified in [Model] for REST API`
