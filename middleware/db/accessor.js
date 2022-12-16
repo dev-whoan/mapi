@@ -3,6 +3,7 @@ import MysqlAccessor from './mysql/index.js';
 import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 import DB_TYPE from '../../core/enum/dbType.js';
+import FirebaseAccessor from './firebase/index.js';
 
 export default class DBAccessor {
     constructor(){
@@ -13,6 +14,10 @@ export default class DBAccessor {
                 break;
             case DB_TYPE.MONGO:
                 this.operator = new MongoAccessor();
+                break;
+            case DB_TYPE.FIREBASE:
+                console.log("여기까지됫슴!!");
+                this.operator=new FirebaseAccessor();
                 break;
             default:
                 this.operator = null;

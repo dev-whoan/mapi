@@ -24,7 +24,8 @@ const properties = [
         'use', 'base-uri', 'count'
     ],
     [
-        'type', 'id', 'pw', 'host', 'port', 'scheme'
+        'type', 'id', 'pw', 'host', 'port', 'scheme',"apiKey",
+        "authDomain","projectId","storageBucket","messagingSenderId","appId","measurementId"
     ],
     [
         'use',
@@ -77,7 +78,8 @@ export default class ConfigReader{
 
         for(let i = 0; i < i_list.length; i++){
             let current_object = i_list[i];
-
+         console.log(current_object);
+         console.log("---");
             for(let index in current_object){
                 if(!json[current_object[index]]){
                     throw new OutofConfigKeyException(
@@ -86,6 +88,8 @@ export default class ConfigReader{
                 }
 
                 for(let jdex in properties[index]){
+                    console.log((json[current_object[index]])[properties[index][jdex]]);
+                 
                     if(! (json[current_object[index]])[properties[index][jdex]] ){
                         throw new OutofConfigKeyException(
                             `Out of Key '${properties[index][jdex]}' for '${apiType.GENERAL}->${current_object[index]};' config file.`

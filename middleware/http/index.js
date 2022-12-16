@@ -16,12 +16,16 @@ class RestApiHttpRequestHandler {
         RestApiHttpRequestHandler.restApiHttpRequestHandlerInstance = this;
     }
 
+
     get(uri, configInfo){
+
         this.app.get(
             uri,
             async (req, res, next) => {
+                
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
+                
+              
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
                     configInfo.data.auth === 'yes',
@@ -31,9 +35,11 @@ class RestApiHttpRequestHandler {
                     [true, apiResponser, req, res, next],
                     configInfo.data.proxyOrder
                 );
+              
             
                 // result = { code: ..., message: ...}
-                let result = await proxyWorker.doTask(req, res);  
+                let result = await proxyWorker.doTask(req, res);
+             
                 if(!result || !result.code){
                     result = {
                         code: 500,
@@ -43,7 +49,13 @@ class RestApiHttpRequestHandler {
                 
                 if(result.code === 200){
                     result.size = result.data.length;
-                }                
+                    
+                }
+
+            
+                console.log(result);
+               //console.log(res.status(result.code).json(result));
+
 //                        return result;
                 return res.status(result.code).json(result);
             }
@@ -51,6 +63,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri + '/*',
             async (req, res, next) => {
+               console.log("!11");
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
@@ -109,6 +122,7 @@ class RestApiHttpRequestHandler {
     }
 
     put(uri, configInfo){
+       
         this.app.put(
             uri,
             async (req, res, next) => {
@@ -195,19 +209,24 @@ class RestApiHttpRequestHandler {
     setRouter(configInfo){
         let URIs = configInfo.keys();
         let uri;
+        
         let baseConfig = ConfigReader.instance.getConfig();
         let baseUri = (baseConfig[API_TYPE.REST])['base-uri'];
         baseUri = (baseUri === '/' ? '' : baseUri);
+        
         while( (uri = URIs.next().value) ){
             let rawUri = uri.toString().split('@');
             let _uri = baseUri + rawUri[0] + '/' + rawUri[1];
             let _configInfo = configInfo.get(uri);
            
             if(_configInfo.data.dml.indexOf('select') !== -1){
+                
+               
                 this.get(_uri, _configInfo);   
             }
 
             if(_configInfo.data.dml.indexOf('insert') !== -1){
+           
                 this.post(_uri, _configInfo);
             }
 
@@ -383,6 +402,7 @@ class JsonWebTokenHttpRequestHandler {
         if(jwtObject.use !== "yes") return;
     
         this.post(jwtObject);
+
         this.get(jwtObject);    
     }
 }

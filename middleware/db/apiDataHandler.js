@@ -9,11 +9,15 @@ export default class ApiDataHandler{
     async doSelect(table, columnList, condition, paging){
         let result = await this.dba.select(table, columnList, condition, paging);
     
+        console.log("111dddddddddddddd셀렉트");
+        console.log(result);
         let data = [];
+
+        result=['a','b','c']
         for(let i = 0; i < result.length; i++){
             data.push(result[i]);
         }
-        
+      
         return data;
     }
 

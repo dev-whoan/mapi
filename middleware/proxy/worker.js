@@ -39,6 +39,7 @@ export default class ProxyWorker{
         let endJob = (this.proxyList.indexOf('end') !== -1);
         let jobIndex = 0;
         let __result = null;
+    
         //start, auth, end
         //originTaskOrder = 2
 
@@ -94,6 +95,8 @@ export default class ProxyWorker{
             }
             if(typeof this.proxyList[jobIndex] === 'function' && this.proxyList[jobIndex] === this.originTask){
                 __result = await this.originTask.call(this, ...this.originParams);
+                
+                console.log(__result);
                 jobIndex++;
                 continue;
             }

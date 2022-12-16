@@ -52,7 +52,7 @@ export default class ApiConfigReader{
                 jsonData.model,
                 jsonData.dml,
                 jsonData.count,
-                jsonData['paging-uri']
+               jsonData['paging-uri']
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
@@ -83,13 +83,16 @@ export default class ApiConfigReader{
         let table = modelObject.data.id;
 
         let dba = new DBAccessor();
-        let aiColumn = await dba.setAutoIncrement(table);
+        
+
+        if(!dba.type=='Firebase')
+        {
+            let aiColumn = await dba.setAutoIncrement(table);
         if(!aiColumn || !(aiColumn.COLUMN_NAME)){
             throw new AutoIncrementUndefinedException(
                 `No Auto Increment Column Detected in Table ${model}. MAPI tried to create the column manually, but it failed.`
             );
         }
-
         if(dba instanceof MySqlAccessor){
             modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
         }
@@ -97,6 +100,10 @@ export default class ApiConfigReader{
 //            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
         }
         configInfo.data.autoIncrement = aiColumn.COLUMN_NAME;
+        }
+        
+
+        
         this.configInfo.set(configId, configInfo);
     }
 
@@ -113,10 +120,16 @@ export default class ApiConfigReader{
         
         let keys = _configInfo.keys();
         let _key = null;
+        console.log("text11");
+        console.log(keys);
         
         while( (_key = keys.next().value) ){
             let oneObject = _configInfo.get(_key);
             let modelId = oneObject.data.model;
+            console.log(modelId);
+            console.log("모델아이디");
+
+            console.log("ee");
             let model = new ModelConfigReader().getConfig(modelId);
             console.log(`** Model [${modelId}] checking...`);
             if(!model){

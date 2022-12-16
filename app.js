@@ -26,6 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.set('port', process.env.HOST_PORT);
+
 app.set('host', process.env.HOST_NAME);
 
 app.use(bodyParser.json());
@@ -72,7 +73,10 @@ if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig
     await proxyWorker.doTask();
 
     const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
+   
     restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);
+
+   
 }
 /* Rest Api */
 

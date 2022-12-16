@@ -69,6 +69,9 @@ export default class ApiResponser{
             };
         }
         let _condition = null;
+      
+        this.apiConfigObject.data.pagingUri=uri;
+        
         const paging = {
             uri: this.apiConfigObject.data.pagingUri.replaceAll('/', ''),
             count: ConfigReader.instance.getConfig()[API_TYPE.REST].count

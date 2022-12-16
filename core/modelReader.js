@@ -51,6 +51,7 @@ export default class ModelConfigReader{
     };
 
     getConfig(key){
+
         return this.configInfo.get(key);
     };
 
