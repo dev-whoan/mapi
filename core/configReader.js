@@ -78,8 +78,7 @@ export default class ConfigReader{
 
         for(let i = 0; i < i_list.length; i++){
             let current_object = i_list[i];
-         console.log(current_object);
-         console.log("---");
+  
             for(let index in current_object){
                 if(!json[current_object[index]]){
                     throw new OutofConfigKeyException(

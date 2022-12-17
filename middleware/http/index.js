@@ -53,7 +53,7 @@ class RestApiHttpRequestHandler {
                 }
 
             
-                console.log(result);
+                //console.log(result);
                //console.log(res.status(result.code).json(result));
 
 //                        return result;
@@ -63,7 +63,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri + '/*',
             async (req, res, next) => {
-               console.log("!11");
+              
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);

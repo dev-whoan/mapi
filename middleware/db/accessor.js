@@ -16,7 +16,6 @@ export default class DBAccessor {
                 this.operator = new MongoAccessor();
                 break;
             case DB_TYPE.FIREBASE:
-                console.log("여기까지됫슴!!");
                 this.operator=new FirebaseAccessor();
                 break;
             default:

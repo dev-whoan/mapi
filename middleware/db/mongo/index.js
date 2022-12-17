@@ -87,6 +87,7 @@ export default class MongoAccessor {
             );
         }
 
+
         const _collection = this.client.db(dbInfo.scheme).collection(collection);
         
         if(condition && condition.page)  delete condition.page;
