@@ -1,9 +1,10 @@
 import PROCESS_EXIT_CODE from "../../../core/enum/processExitCode.js";
-import { MongoClient, Long, Double } from "mongodb";
+import { MongoClient, Long, Double, ObjectID, ObjectId } from "mongodb";
 import ConfigReader from '../../../core/configReader.js';
 import NullOrUndefinedException from "../../../exception/nullOrUndefinedException.js";
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
 import { objectKeysToArray } from "../../../core/utils.js";
+import ModelConfigReader from "../../../core/modelReader.js";
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -41,12 +42,11 @@ export default class MongoAccessor {
         return 0;
     }
 
-    /*
-        return example
-        [
-            { SEQ: 2, NAME: 'insert-test', AGE: 6 }, ...
-        ]
-    */
+    async setAutoIncrement(collection){
+        return {
+            COLUMN_NAME: '_id'
+        };
+    }
 
     async jwtAuthorize(collection, keyFields, selectFields, body){
         if(!collection || !keyFields){
@@ -80,7 +80,7 @@ export default class MongoAccessor {
         return result;
     }
 
-    async select(collection, fieldList, condition){
+    async select(collection, fieldList, condition, queryOption){
         if(!fieldList){
             throw new NullOrUndefinedException(
                 `Column should be specified in [Model] for REST API`
@@ -89,15 +89,46 @@ export default class MongoAccessor {
 
         const _collection = this.client.db(dbInfo.scheme).collection(collection);
         
-        const query = condition ? condition : null;
-        const options = {};
-        const count = query ? await _collection.countDocuments() : await _collection.countDocuments(query, options);
+        const query = condition ? condition : {};
+        /*
+            {
+                _id: {
+                    $gt: ObjectId(id)
+                }
+            }
+        */
+        const modelObject = ModelConfigReader.instance.getConfig(collection);
+        
+        for(let key in condition){
+            if(modelObject.data.columns[key] === 'integer'){
+                query[key] = parseInt(condition[key]);
+                continue;
+            }
+            if(modelObject.data.columns[key] === 'long'){
+                query[key] = new Long(condition[key]);
+                continue;
+            }
 
+            if(modelObject.data.columns[key] === 'float'){
+                query[key] = parseFloat(condition[key]);
+                continue;
+            }
+            if(modelObject.data.columns[key] === 'double'){
+                query[key] = new Double(condition[key]);
+                continue;
+            }
+
+        }
+
+        const options = {};
+        const count = await _collection.countDocuments(query, options);
+        
         if(count === 0){
             return [];
         }
 
-        const cursor = await _collection.find(query, options);
+        const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
+        const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
         let result = [];
         
         await cursor.forEach((item, index) => {
@@ -132,10 +163,13 @@ export default class MongoAccessor {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
             if(sn){
-                if(sn === 'long'){
+                if(sn === 'integer'){
+                    value = parseInt(value);
+                } else if(sn === 'long'){
                     value = new Long(value);
-                }
-                else if(sn === 'double'){
+                } else if(sn === 'float'){
+                    value = parseFloat(value);
+                } else if(sn === 'double'){
                     value = new Double(value);
                 }
             }
@@ -226,10 +260,13 @@ export default class MongoAccessor {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
             if(sn){
-                if(sn === 'long'){
+                if(sn === 'integer'){
+                    value = parseInt(value);
+                } else if(sn === 'long'){
                     value = new Long(value);
-                }
-                else if(sn === 'double'){
+                } else if(sn === 'float'){
+                    value = parseFloat(value);
+                } else if(sn === 'double'){
                     value = new Double(value);
                 }
             }
