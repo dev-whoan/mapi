@@ -4,11 +4,14 @@ import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 import DB_TYPE from '../../core/enum/dbType.js';
 import FirebaseAccessor from './firebase/index.js';
-
+import FirestoreAccessor from './firebase/firestore.js';
 export default class DBAccessor {
     constructor(){
         this.type = configReader.instance.getConfig().database.type;
+                    console.log(this.type);
+                    console.log(DB_TYPE);
         switch(this.type){
+
             case DB_TYPE.MYSQL:
                 this.operator = new MysqlAccessor();
                 break;
@@ -17,6 +20,9 @@ export default class DBAccessor {
                 break;
             case DB_TYPE.FIREBASE:
                 this.operator=new FirebaseAccessor();
+                break;
+            case DB_TYPE.FIRESTORE:
+                this.operator=new FirestoreAccessor();
                 break;
             default:
                 this.operator = null;

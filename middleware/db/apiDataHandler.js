@@ -9,6 +9,8 @@ export default class ApiDataHandler {
 
   async doSelect(table, columnList, condition, paging) {
     let result = await this.dba.select(table, columnList, condition, paging);
+    console.log(result);
+    console.log("리저틀값반환");
     let data = [];
 
     /*
