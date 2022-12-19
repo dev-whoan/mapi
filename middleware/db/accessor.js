@@ -38,8 +38,8 @@ export default class DBAccessor {
         return this.operator.select(table, columnList, condition, paging)
     }
 
-    async update(table, columnList, dataList, condition, modelObject){
-        return this.operator.update(table, columnList, dataList, condition, modelObject)
+    async update(table, columnList, dataList, condition, modelObject, queryOption){
+        return this.operator.update(table, columnList, dataList, condition, modelObject, queryOption)
     }
 
     async insert(table, columnList, dataList, modelObject){

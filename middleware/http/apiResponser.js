@@ -4,6 +4,8 @@ import ApiDataHandler from '../db/apiDataHandler.js';
 import { objectKeysToArray } from '../../core/utils.js';
 import ConfigReader from '../../core/configReader.js';
 import API_TYPE from '../../core/enum/apiType.js';
+import DB_TYPE from '../../core/enum/dbType.js';
+import { URL } from 'url';
 
 export default class ApiResponser{
     constructor(apiConfigObject){
@@ -48,12 +50,13 @@ export default class ApiResponser{
     *  4. Return
     */
 
-    getApiData(uri){
+    getApiData(uri, query){
         let apiDataHandler = new ApiDataHandler();
         let modelConfigReader = new ModelConfigReader();
 
         let model = this.apiConfigObject.data.model;
         let modelObject = modelConfigReader.getConfig(model);
+        
         let conditionUri = uri.split(this.originalUri)[1];
         let _requestConditions = conditionUri.split('/');
         _requestConditions.splice(0, 1);
@@ -69,31 +72,23 @@ export default class ApiResponser{
             };
         }
         let _condition = null;
-        const paging = {
-            uri: this.apiConfigObject.data.pagingUri.replaceAll('/', ''),
-            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count
+
+        const queryOption = {
+            'pagination-key': this.apiConfigObject.data.pagingQuery,
+            'pagination-value': query[this.apiConfigObject.data.pagingQuery],
+            'pagination-column': this.apiConfigObject.data.autoIncrementColumn,
+            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
         };
 
         if(_requestConditions.length !== 0){
             _condition = {};
 
             for(let i = 0; i < _requestConditions.length; i += 2){
-                if(_requestConditions[i] === paging.uri){
-                    if(isNaN(Number(_requestConditions[i+1])) || _requestConditions[i+1] <= 0){
-                        return {
-                            code: 400
-                        };
-                    }
-                    paging.lastIndex = _requestConditions[i+1] > 1 ? 
-                        _requestConditions[i+1] : 
-                        0;
-                    paging.autoIncrement = this.apiConfigObject.data.autoIncrement;
-                }
                 _condition[_requestConditions[i]] = _requestConditions[i+1];
             }
             
             for(let key in _condition){
-                if(!modelObject.data.columns[key] && key !== paging.uri ){
+                if(!modelObject.data.columns[key]){
                     console.log(`Model does not have the request column [${key}]`);
                     return {
                         code: 400
@@ -111,10 +106,10 @@ export default class ApiResponser{
                 _columns += ', '
         })
 
-        return apiDataHandler.doSelect(table, _columns, _condition, paging);
+        return apiDataHandler.doSelect(table, _columns, _condition, queryOption);
     }
 
-    putApiData(uri, body){
+    putApiData(uri, body, query){
         let apiDataHandler = new ApiDataHandler();
         let modelConfigReader = new ModelConfigReader();
 
@@ -186,8 +181,16 @@ export default class ApiResponser{
         }
         /* Create Post Info */
 
+        const queryOption = {
+            'pagination-key': this.apiConfigObject.data.pagingQuery,
+            'pagination-value': query[this.apiConfigObject.data.pagingQuery],
+            'pagination-column': this.apiConfigObject.data.autoIncrementColumn,
+            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
+        };
+
         let table = modelObject.data.id;
-        return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject);
+        console.log(`hey`, queryOption);
+        return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject, queryOption);
     }
 
     postApiData(body){
@@ -218,7 +221,7 @@ export default class ApiResponser{
             _dataList.push(body[key]);
         }
 
-        for(let i = 0; i < columnNotNull.length; i++){
+        for(let i = 0; i < columnNotNull.length; i++) {
             if(!body[columnNotNull[i]]){
                 console.log(`Require column is null [${columnNotNull[i]}] and you sent`);
                 console.log(body);
@@ -244,7 +247,8 @@ export default class ApiResponser{
     }
 
     async get(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.getApiData(req.originalUrl);
+        let _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
+        let result = await apiResponser.getApiData(_requestedUri, req.query);
         let _code = 200;
         if(!result || result.length == 0){
             _code = 204;
@@ -256,36 +260,24 @@ export default class ApiResponser{
         let nextUri = null, prevUri = null;
         
         if(result instanceof Array && result.length != 0){
-            const aiColumn = apiResponser.apiConfigObject.data.autoIncrement;
+            const aiColumn = apiResponser.apiConfigObject.data.autoIncrementColumn;
             result.sort((a, b) => { 
                 return a[aiColumn] > b[aiColumn] ? 1 : -1
-            })
-
-            let __prefix = req.originalUrl.split('/');
-            let announcePagingUriPrefix = req.originalUrl;
-            if(__prefix.indexOf(apiResponser.apiConfigObject.data.pagingUri.replaceAll('/', '')) !== -1){
-                
-                __prefix.splice(__prefix.indexOf(apiResponser.apiConfigObject.data.pagingUri)-1, 2);
-                announcePagingUriPrefix = __prefix.join('/');
-            }
-            
-            nextUri =  result.length < CONFIG_PAGING_COUNT ? null :
-                    `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/${(result[result.length-1][apiResponser.apiConfigObject.data.autoIncrement] + 1)}`;
-
-            const prevAiVal = result[0][apiResponser.apiConfigObject.data.autoIncrement] - CONFIG_PAGING_COUNT;
-            
-            prevUri = prevAiVal > 0 ?
-                 `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/${prevAiVal}` :
-                 `${announcePagingUriPrefix}${apiResponser.apiConfigObject.data.pagingUri}/1`;
+            });
         }
 
         let msg = {
-            message: HTTP_RESPONSE[_code] ,
+            message: HTTP_RESPONSE[_code],
             data: result,
             code: _code,
-            'next-uri': nextUri,
-            'prev-uri': prevUri
+            'next-uri': null,
+            'prev-uri': null
         };
+        
+        if(ConfigReader.instance.getConfig()[API_TYPE.DB].type === DB_TYPE.MONGO){
+            msg['next-uri'] = 'Not Supported (MongoDB) Yet';
+            msg['prev-uri'] = 'Not Supported (MongoDB) Yet';
+        }
 
         return msg;
     }
@@ -320,7 +312,8 @@ export default class ApiResponser{
     }
 
     async put(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.putApiData(req.originalUrl, req.body);
+        let _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
+        let result = await apiResponser.putApiData(_requestedUri, req.body, req.query);
         let _code = 200;
         if(!result || result.length == 0){
             _code = 204;

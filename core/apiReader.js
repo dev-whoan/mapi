@@ -52,7 +52,7 @@ export default class ApiConfigReader{
                 jsonData.model,
                 jsonData.dml,
                 jsonData.count,
-                jsonData['paging-uri']
+                jsonData['paging-query']
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
@@ -96,7 +96,7 @@ export default class ApiConfigReader{
         if(dba instanceof MongoAccessor){
 //            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
         }
-        configInfo.data.autoIncrement = aiColumn.COLUMN_NAME;
+        configInfo.data.autoIncrementColumn = aiColumn.COLUMN_NAME;
         this.configInfo.set(configId, configInfo);
     }
 

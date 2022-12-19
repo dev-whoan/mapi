@@ -27,6 +27,7 @@ const __dirname = path.dirname(__filename);
 
 app.set('port', process.env.HOST_PORT);
 app.set('host', process.env.HOST_NAME);
+app.set('json spaces', 4);
 
 app.use(bodyParser.json());
 

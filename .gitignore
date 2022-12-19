@@ -2,6 +2,9 @@
 configs/
 configs/**
 
+files/
+files/**
+
 # Logs
 .DS_Store
 logs
