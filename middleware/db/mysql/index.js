@@ -124,6 +124,7 @@ export default class MySqlAccessor{
 
     async select(table, columnList, condition, queryOption){
         let cond = (condition ? '' : null);
+        let paginationOffset = null;
         
         let i = 0;
         if(condition){
@@ -138,14 +139,16 @@ export default class MySqlAccessor{
 
         if(queryOption){
             if(queryOption['pagination-value']){
+                /*
                 if(!cond)   cond = '';
                 else if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
                     cond += ' AND ';
                 }
-                if(!condition)  condition = {};
-                
                 cond += `${queryOption['pagination-column']} > ?`;
+                */
+                if(!condition)  condition = {};
                 condition[queryOption['pagination-column']] = (queryOption['pagination-value']-1) * queryOption.count;
+                paginationOffset = (queryOption['pagination-value']-1) * queryOption.count;
             }    
         }
 
@@ -157,11 +160,19 @@ export default class MySqlAccessor{
 
         let result = null;
         let conn = await pool.getConnection();
+        let __query = cond ? `SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`
+                           : `SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`;
 
-        if(cond)
-            result = await conn.query(`SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`, objectValuesToArray(condition));
+        if(paginationOffset){
+            __query = `${__query} OFFSET ?`;
+        }
+
+        console.log(__query, condition);
+
+        if(cond || paginationOffset)
+            result = await conn.query(__query, objectValuesToArray(condition));
         else
-            result = await conn.query(`SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`);
+            result = await conn.query(__query);
 
         conn.close();
         conn.end();
