@@ -1,10 +1,11 @@
-
-import ApiConfigReader from '../../core/apiReader.js';
-import configReader from '../../core/configReader.js';
 import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
 import ApiDataHandler from '../db/apiDataHandler.js';
-import { arrayToObject, objectKeysToArray } from '../../core/utils.js';
+import { objectKeysToArray } from '../../core/utils.js';
+import ConfigReader from '../../core/configReader.js';
+import API_TYPE from '../../core/enum/apiType.js';
+import DB_TYPE from '../../core/enum/dbType.js';
+import { URL } from 'url';
 
 export default class ApiResponser{
     constructor(apiConfigObject){
@@ -49,12 +50,13 @@ export default class ApiResponser{
     *  4. Return
     */
 
-    getApiData(uri){
+    getApiData(uri, query){
         let apiDataHandler = new ApiDataHandler();
         let modelConfigReader = new ModelConfigReader();
 
         let model = this.apiConfigObject.data.model;
         let modelObject = modelConfigReader.getConfig(model);
+        
         let conditionUri = uri.split(this.originalUri)[1];
         let _requestConditions = conditionUri.split('/');
         _requestConditions.splice(0, 1);
@@ -70,6 +72,13 @@ export default class ApiResponser{
             };
         }
         let _condition = null;
+
+        const queryOption = {
+            'pagination-key': this.apiConfigObject.data.pagingQuery,
+            'pagination-value': query[this.apiConfigObject.data.pagingQuery],
+            'pagination-column': this.apiConfigObject.data.autoIncrementColumn,
+            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
+        };
 
         if(_requestConditions.length !== 0){
             _condition = {};
@@ -97,10 +106,10 @@ export default class ApiResponser{
                 _columns += ', '
         })
 
-        return apiDataHandler.doSelect(table, _columns, _condition);
+        return apiDataHandler.doSelect(table, _columns, _condition, queryOption);
     }
 
-    putApiData(uri, body){
+    putApiData(uri, body, query){
         let apiDataHandler = new ApiDataHandler();
         let modelConfigReader = new ModelConfigReader();
 
@@ -172,8 +181,16 @@ export default class ApiResponser{
         }
         /* Create Post Info */
 
+        const queryOption = {
+            'pagination-key': this.apiConfigObject.data.pagingQuery,
+            'pagination-value': query[this.apiConfigObject.data.pagingQuery],
+            'pagination-column': this.apiConfigObject.data.autoIncrementColumn,
+            count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
+        };
+
         let table = modelObject.data.id;
-        return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject);
+        console.log(`hey`, queryOption);
+        return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject, queryOption);
     }
 
     postApiData(body){
@@ -204,7 +221,7 @@ export default class ApiResponser{
             _dataList.push(body[key]);
         }
 
-        for(let i = 0; i < columnNotNull.length; i++){
+        for(let i = 0; i < columnNotNull.length; i++) {
             if(!body[columnNotNull[i]]){
                 console.log(`Require column is null [${columnNotNull[i]}] and you sent`);
                 console.log(body);
@@ -230,21 +247,38 @@ export default class ApiResponser{
     }
 
     async get(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.getApiData(req.originalUrl);
+        let _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
+        let result = await apiResponser.getApiData(_requestedUri, req.query);
         let _code = 200;
         if(!result || result.length == 0){
             _code = 204;
         } else if(result && result.code == 400){
             _code = 400;
         }
-        
-        let msg = {
-            message: HTTP_RESPONSE[_code] ,
-            data: result,
-            code: _code
-        };
 
-//        return res.status(msg.code).json(msg);
+        const CONFIG_PAGING_COUNT = ConfigReader.instance.getConfig()[API_TYPE.REST].count;
+        let nextUri = null, prevUri = null;
+        
+        if(result instanceof Array && result.length != 0){
+            const aiColumn = apiResponser.apiConfigObject.data.autoIncrementColumn;
+            result.sort((a, b) => { 
+                return a[aiColumn] > b[aiColumn] ? 1 : -1
+            });
+        }
+
+        let msg = {
+            message: HTTP_RESPONSE[_code],
+            data: result,
+            code: _code,
+            'next-uri': null,
+            'prev-uri': null
+        };
+        
+        if(ConfigReader.instance.getConfig()[API_TYPE.DB].type === DB_TYPE.MONGO){
+            msg['next-uri'] = 'Not Supported (MongoDB) Yet';
+            msg['prev-uri'] = 'Not Supported (MongoDB) Yet';
+        }
+
         return msg;
     }
 
@@ -274,12 +308,12 @@ export default class ApiResponser{
             msg.data.message = HTTP_RESPONSE[204];
         }
 
-//        return res.status(msg.code).json(msg);
         return msg;
     }
 
     async put(proxied, apiResponser, req, res, next){
-        let result = await apiResponser.putApiData(req.originalUrl, req.body);
+        let _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
+        let result = await apiResponser.putApiData(_requestedUri, req.body, req.query);
         let _code = 200;
         if(!result || result.length == 0){
             _code = 204;
@@ -293,7 +327,6 @@ export default class ApiResponser{
             code: _code
         };
 
-//        return res.status(msg.code).json(msg);
         return msg;
     }
 
@@ -306,7 +339,6 @@ export default class ApiResponser{
             code: 204
         };
 
-//        return res.status(200).json(msg);
         return msg;
     }
 }

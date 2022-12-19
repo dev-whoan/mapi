@@ -6,8 +6,8 @@ export default class ApiDataHandler{
         this.dba = new DBAccessor();
     }
 
-    async doSelect(table, columnList, condition){
-        let result = await this.dba.select(table, columnList, condition);
+    async doSelect(table, columnList, condition, paging){
+        let result = await this.dba.select(table, columnList, condition, paging);
     
         let data = [];
         for(let i = 0; i < result.length; i++){
@@ -49,8 +49,9 @@ export default class ApiDataHandler{
         };
     }
 
-    async doModify(table, columnList, dataList, condition, modelObject){
-        let result = await this.dba.update(table, columnList, dataList, condition, modelObject);
+    async doModify(table, columnList, dataList, condition, modelObject, queryOption){
+        console.log("Still?", queryOption);
+        let result = await this.dba.update(table, columnList, dataList, condition, modelObject, queryOption);
         
         if(result.affectedRows){
             let _result = {

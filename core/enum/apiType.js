@@ -2,7 +2,8 @@ const API_TYPE = {
     CORS: "cors",
     GENERAL: "general",
     REST: "restapi",
-    FTP: "fileTransfer",
+    DB: "database",
+    FILE_TRANSFER: "file-transfer",
     JWT: "jwt",
     MODEL: "model"
 };

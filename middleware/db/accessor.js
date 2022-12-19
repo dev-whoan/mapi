@@ -2,23 +2,28 @@ import configReader from '../../core/configReader.js';
 import MysqlAccessor from './mysql/index.js';
 import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
+import DB_TYPE from '../../core/enum/dbType.js';
 
 export default class DBAccessor {
     constructor(){
-        this.dbType = configReader.instance.getConfig().database.type;
-        switch(this.dbType){
-            case 'mysql':
+        this.type = configReader.instance.getConfig().database.type;
+        switch(this.type){
+            case DB_TYPE.MYSQL:
                 this.operator = new MysqlAccessor();
                 break;
-            case 'mongo':
+            case DB_TYPE.MONGO:
                 this.operator = new MongoAccessor();
                 break;
             default:
                 this.operator = null;
                 throw new UnknownDatabaseAccessorException(
-                    `Unknown Database Accessor Have Set:: ${dbType}`
+                    `Unknown Database Accessor was requested to be set.[${type}]`
                 );
         }
+    }
+
+    async setAutoIncrement(table){
+        return this.operator.setAutoIncrement(table);
     }
 
     async initTest(){
@@ -29,12 +34,12 @@ export default class DBAccessor {
         return this.operator.jwtAuthorize(table, keyColumns, selectColumns, body);
     }
 
-    async select(table, columnList, condition){
-        return this.operator.select(table, columnList, condition)
+    async select(table, columnList, condition, paging){
+        return this.operator.select(table, columnList, condition, paging)
     }
 
-    async update(table, columnList, dataList, condition, modelObject){
-        return this.operator.update(table, columnList, dataList, condition, modelObject)
+    async update(table, columnList, dataList, condition, modelObject, queryOption){
+        return this.operator.update(table, columnList, dataList, condition, modelObject, queryOption)
     }
 
     async insert(table, columnList, dataList, modelObject){

@@ -5,13 +5,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiConfigObject from '../data/object/apiConfigObject.js';
-import ApiResponser from '../middleware/http/apiResponser.js';
-import ProxyWorker from '../middleware/proxy/worker.js';
 import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
-import ConfigReader from './configReader.js';
-import API_TYPE from './enum/apiType.js';
-import HTTP_RESPONSE from './enum/httpResponse.js';
+import DBAccessor from '../middleware/db/accessor.js';
+import { stringToBase64 } from './utils.js';
+import AutoIncrementUndefinedException from '../exception/autoIncrementUndefinedException.js';
+import MySqlAccessor from '../middleware/db/mysql/index.js';
+import MongoAccessor from '../middleware/db/mongo/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -50,7 +50,9 @@ export default class ApiConfigReader{
                 jsonData.log,
                 jsonData.uri,
                 jsonData.model,
-                jsonData.dml
+                jsonData.dml,
+                jsonData.count,
+                jsonData['paging-query']
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
@@ -64,219 +66,43 @@ export default class ApiConfigReader{
                 console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
                 console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
             }
+            
             this.configInfo.set(configId, oneObject);
+            
+            this.setAutoIncrement(configId);
+            console.log(this.configInfo.get(configId));
         });
     };
+
+    async setAutoIncrement(configId){
+        let configInfo = this.configInfo.get(configId);
+        let modelConfigReader = new ModelConfigReader();
+        let model = configInfo.data.model;
+
+        let modelObject = modelConfigReader.getConfig(model);
+        let table = modelObject.data.id;
+
+        let dba = new DBAccessor();
+        let aiColumn = await dba.setAutoIncrement(table);
+        if(!aiColumn || !(aiColumn.COLUMN_NAME)){
+            throw new AutoIncrementUndefinedException(
+                `No Auto Increment Column Detected in Table ${model}. MAPI tried to create the column manually, but it failed.`
+            );
+        }
+
+        if(dba instanceof MySqlAccessor){
+            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
+        }
+        if(dba instanceof MongoAccessor){
+//            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
+        }
+        configInfo.data.autoIncrementColumn = aiColumn.COLUMN_NAME;
+        this.configInfo.set(configId, configInfo);
+    }
 
     getConfig(key){
         return this.configInfo.get(key);
     };
-
-    setRouter(base_app){
-        let URIs = this.configInfo.keys();
-        let uri;
-        let baseConfig = ConfigReader.instance.getConfig();
-        let baseUri = (baseConfig[API_TYPE.REST])['base-uri'];
-        baseUri = (baseUri === '/' ? '' : baseUri);
-        while( (uri = URIs.next().value) ){
-            let rawUri = uri.toString().split('@');
-            let _uri = baseUri + rawUri[0] + '/' + rawUri[1];
-            let _configInfo = this.configInfo.get(uri);
-            /*
-            BEFORE PROXY
-            
-            let apiResponser = new ApiResponser(_configInfo);
-            return apiResponser.get(req, res, next);         
-            */
-           
-            if(_configInfo.data.dml.indexOf('select') !== -1){
-                base_app.get(
-                    _uri,
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                        
-                        /*
-                        if(_configInfo.data.auth === 'yes'){
-                            _configInfo.data.proxyList = _configInfo.data.proxyList.filter( i => i != 'auth' );
-                            _configInfo.data.proxyList = insertAt(
-                                _configInfo.data.proxyList,
-                                1,
-                                'auth'
-                            );
-                        }
-                        */
-
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [GET]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.get,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrder
-                        );
-                    
-                        // result = { code: ..., message: ...}
-                        let result = await proxyWorker.doTask(req, res);  
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }                       
-                        
-                        if(result.code === 200){
-                            result.size = result.data.length;
-                        }                
-//                        return result;
-                        return res.status(result.code).json(result);
-                    }
-                );
-                base_app.get(
-                    _uri + '/*',
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                        
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [GET]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.get,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrde
-                        );
-                        
-                        let result = await proxyWorker.doTask(req, res);
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }
-                        if(result.code === 200){
-                            result.size = result.data.length;
-                        }                                                                        
-//                        return result;
-                        return res.status(result.code).json(result);
-                    }
-                );
-            }
-
-            if(_configInfo.data.dml.indexOf('insert') !== -1){
-                base_app.post(
-                    _uri,
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                        
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [POST]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.post,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrder
-                        );
-                        
-                        let result = await proxyWorker.doTask(req, res);
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }                                                        
-//                        return result;
-                        return res.status(result.code).json(result);    
-                    }
-                );
-            }
-
-            if(_configInfo.data.dml.indexOf('update') !== -1){
-                base_app.put(
-                    _uri,
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [PUT]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.put,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrder
-                        );
-                        
-                        let result = await proxyWorker.doTask(req, res);
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }                                                        
-//                        return result;
-                        return res.status(result.code).json(result);
-                    }
-                )
-                base_app.put(
-                    _uri + '/*',
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [PUT]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.put,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrder
-                        );
-                        
-                        let result = await proxyWorker.doTask(req, res);
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }                                                        
-//                        return result;
-                        return res.status(result.code).json(result);         
-                    }
-                );
-            }
-
-            if(_configInfo.data.dml.indexOf('delete') !== -1){
-                base_app.delete(
-                    _uri,
-                    async (req, res, next) => {
-                        const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-                        let apiResponser = new ApiResponser(_configInfo);
-                        let proxyWorker = new ProxyWorker(
-                            _configInfo.data.auth === 'yes',
-                            _configInfo.data.proxyList,
-                            `API Worker - [DELETE]${_configInfo.data.uri}@${_configInfo.data.id}(${_cip})`,
-                            apiResponser.delete,
-                            [true, apiResponser, req, res, next],
-                            _configInfo.data.proxyOrder
-                        );
-                        
-                        let result = await proxyWorker.doTask(req, res);
-                        if(!result || !result.code){
-                            result = {
-                                code: 500,
-                                message: HTTP_RESPONSE[500]
-                            };
-                        }                                                        
-//                        return result;
-                        return res.status(result.code).json(result);          
-                    }
-                );
-            }
-        }
-    }
 
     printConfigs(){
         console.log(this.configInfo);
@@ -292,13 +118,13 @@ export default class ApiConfigReader{
             let oneObject = _configInfo.get(_key);
             let modelId = oneObject.data.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`Model [${modelId}] checking...`);
+            console.log(`** Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`Model [${modelId}] Ok!`);
+            console.log(`** Model [${modelId}] Ok!`);
         }
     }
 

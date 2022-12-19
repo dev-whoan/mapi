@@ -2,9 +2,10 @@ import ConfigReader from '../../../core/configReader.js';
 import mariadb from "mariadb";
 import InvalidSqlInsertExecuteException from '../../../exception/InvalidSqlInsertExecuteException.js';
 import HTTP_RESPONSE from '../../../core/enum/httpResponse.js';
-import { objectKeysToArray, objectValuesToArray } from '../../../core/utils.js';
+import { objectValuesToArray } from '../../../core/utils.js';
 import PROCESS_EXIT_CODE from '../../../core/enum/processExitCode.js';
 import NullOrUndefinedException from '../../../exception/nullOrUndefinedException.js';
+import AutoIncrementUndefinedException from '../../../exception/autoIncrementUndefinedException.js';
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -50,6 +51,40 @@ export default class MySqlAccessor{
         return 0;
     }
     
+    async setAutoIncrement(table){
+        let conn = await pool.getConnection();
+        try{
+            const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
+
+            if(result[0]){
+                conn.close();
+                conn.end();
+                return result[0];
+            }
+    
+            const createAI = await conn.query(
+                `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
+            );
+    
+            if(createAI[0]){
+                conn.close();
+                conn.end();
+                return createAI[0];
+            }
+    
+            throw new AutoIncrementUndefinedException(
+                `No Auto Increment Column Detected in Table [${table}]. MAPI tried to create the column manually, but it failed.`
+            );
+        } catch (e) {
+            if(e.code === 'ER_NO_SUCH_TABLE'){
+                throw new AutoIncrementUndefinedException(
+                    `No Such Table [${table}] Detected in Database. Are you sure the table is exist in the Database?`
+                );
+            }
+            throw e;
+        }         
+    }
+
     async jwtAuthorize(table, keyColumns, selectColumns, body){
         if(!table || !keyColumns){
             throw new NullOrUndefinedException(
@@ -84,14 +119,12 @@ export default class MySqlAccessor{
         conn.close();
         conn.end();
 
-        console.log(result);
         return result;
     }
 
-    async select(table, columnList, condition){
+    async select(table, columnList, condition, queryOption){
         let cond = (condition ? '' : null);
-        let conn = await pool.getConnection();
-
+        
         let i = 0;
         if(condition){
             const _leng = Object.keys(condition).length;
@@ -102,7 +135,20 @@ export default class MySqlAccessor{
                 }
             }
         }
-        
+
+        if(queryOption){
+            if(queryOption['pagination-value']){
+                if(!cond)   cond = '';
+                else if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
+                    cond += ' AND ';
+                }
+                if(!condition)  condition = {};
+                
+                cond += `${queryOption['pagination-column']} > ?`;
+                condition[queryOption['pagination-column']] = (queryOption['pagination-value']-1) * queryOption.count;
+            }    
+        }
+
         if(!columnList){
             throw new NullOrUndefinedException(
                 `Column should be specified in [Model] for REST API`
@@ -110,22 +156,22 @@ export default class MySqlAccessor{
         }
 
         let result = null;
+        let conn = await pool.getConnection();
+
         if(cond)
-            result = await conn.query(`SELECT ${columnList} FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
+            result = await conn.query(`SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`, objectValuesToArray(condition));
         else
-            result = await conn.query(`SELECT ${columnList} FROM ${table}`);
+            result = await conn.query(`SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`);
 
         conn.close();
         conn.end();
-
-        console.log(" result of mysql select ");
-        console.log(result);
         
         return result;
     }
 
-    async update(table, columnList, dataList, condition){
-        let getResult = await this.select(table, null, condition);
+    async update(table, columnList, dataList, condition, modelObject, queryOption){
+        console.log("Hello", queryOption);
+        let getResult = await this.select(table, columnList, condition, queryOption);
         if(getResult.length != 1){
             if(getResult.length > 1){
                 return {
@@ -207,8 +253,6 @@ export default class MySqlAccessor{
             conn.close();
             conn.end();
         }
-
-        console.log(result);
 
         return result;
     }

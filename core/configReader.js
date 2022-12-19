@@ -1,13 +1,19 @@
 import InappropriateConfigKeyException from '../exception/inappropriateConfigKeyException.js';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
+import { readFile } from 'fs/promises';
+//import generalInfo from '../configs/default.json' assert {type: "json"};
+const generalInfo = JSON.parse(
+  await readFile(
+    new URL('../configs/default.json', import.meta.url)
+  )
+);
 
 import ApiReader from './apiReader.js';
-import generalInfo from '../configs/default.json' assert {type: "json"};
 import apiType from './enum/apiType.js';
 
 
 const controlList = [
-    "cors", "restapi", "database", "jwt"
+    "cors", "restapi", "database", "jwt", "file-transfer"
 ]
 
 const properties = [
@@ -15,7 +21,7 @@ const properties = [
         'default', 'origin', 'methods', 'allow-headers'
     ],
     [
-        'base-uri'
+        'use', 'base-uri', 'count'
     ],
     [
         'type', 'id', 'pw', 'host', 'port', 'scheme'
@@ -30,6 +36,16 @@ const properties = [
         'alg',
         'columns',
         'keys'
+    ],
+    [
+        'use',
+        'type',
+        'base-uri',
+        'read-uri',
+        'count',
+        'base-directory',
+        'table',
+        'columns'
     ]
 ]
 
