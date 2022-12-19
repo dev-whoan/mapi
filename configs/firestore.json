@@ -1,0 +1,13 @@
+
+ {
+"firebaseConfig":{
+    "apiKey": "AIzaSyAg5M_IWY0PA2vQckXipAhwjo-6io6ygSQ",
+    "authDomain": "testnode-eb46b.firebaseapp.com",
+    "projectId": "testnode-eb46b",
+    "storageBucket": "testnode-eb46b.appspot.com",
+    "messagingSenderId": "871646953834",
+    "appId": "1:871646953834:web:ad39ebec5b81a3a83ea513",
+    "measurementId": "G-BSLGSWL5EZ"
+}
+
+  }

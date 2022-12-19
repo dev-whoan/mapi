@@ -1,0 +1,55 @@
+{
+    "cors": {
+        "default": "http://localhost:3000",
+        "origin": ["http://localhost:3000", "http://localhost:5000"],
+        "methods": "GET,PUT,POST,DELETE,HEAD,OPTIONS",
+        "allow-headers": "Authorization, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin"
+    },
+    "restapi":{
+        "base-uri": "/",
+        "use":"yes",
+        "count":"1"
+    },
+    "database": {
+        "type": "firestore",
+        "id": "DB_USER",
+        "pw": "DB_PW",
+        "host": "DB_IP",
+        "port": "3001",
+        "scheme": "DB_SCHEME|COLLECTION",
+        "apiKey": "AIzaSyAg5M_IWY0PA2vQckXipAhwjo-6io6ygSQ",
+        "authDomain": "testnode-eb46b.firebaseapp.com",
+        "projectId": "testnode-eb46b",
+        "storageBucket": "testnode-eb46b.appspot.com",
+        "messagingSenderId": "871646953834",
+        "appId": "1:871646953834:web:ad39ebec5b81a3a83ea513",
+        "measurementId": "G-BSLGSWL5EZ"
+
+    },
+    "jwt": {
+        "use": "no",
+        "generate-uri": "/auth/do",
+        "verify-uri": "/auth/verify",
+        "lifetime": "600",
+        "secret": "JWT_SECRET",
+        "auth-table": "JWT_AUTH",
+        "auth-columns": ["name", "password"],
+        "alg": "HS256",
+        "columns": ["SEQ", "name", "email"],
+        "keys": {
+            "SEQ": "index",
+            "name": "nickname",
+            "email": "contact"
+        }
+    },
+ "file-transfer":{
+    "use":"no",
+    "type":"r",
+    "base-uri":"k",
+    "read-uri":"k",
+    "count":"1",
+    "base-directory":"/re",
+    "table":"2",
+    "columns":"3"
+ }
+}
