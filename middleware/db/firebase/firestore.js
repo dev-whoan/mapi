@@ -103,7 +103,7 @@ export default class FirestoreAccessor {
 
         if(condition && condition.page)  delete condition.page;
         const queryz = condition ? condition : {};
-   
+   console.log(2);
         const queryConstraints = [];
         for(let key in condition)
         {
