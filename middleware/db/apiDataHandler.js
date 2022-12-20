@@ -10,34 +10,8 @@ export default class ApiDataHandler {
   async doSelect(table, columnList, condition, paging) {
     let result = await this.dba.select(table, columnList, condition, paging);
     console.log(result);
-    console.log("리저틀값반환");
     let data = [];
 
-    /*
-    if (this.dba.type == "firebase") {
-      let k = [];
-      onValue(
-        result,
-        (snapshot) => {
-          //  console.log(snapshot);
-          snapshot.forEach((childSnapshot) => {
-            const childKey = childSnapshot.key;
-            const childData = childSnapshot.val();
-            // ...
-            k.push(childData);
-            console.log("rrss");
-            console.log(k);
-            k = ["a", "b", "c"];
-            return k;
-          });
-        },
-        {
-          onlyOnce: true,
-        }
-      );
-    } else {
-    }
-    */
 
     for (let i = 0; i < result.length; i++) {
       data.push(result[i]);
