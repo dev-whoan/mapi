@@ -68,10 +68,27 @@ So the file is located right under `configs/`, it will be `configs/default.json`
         "allow-headers": "Authorization, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Access-Control-Allow-Origin"
     },
     "restapi":{
-        "base-uri": "/"
+        "use": "yes",
+        "base-uri": "/",
+        "count": 10
+    },
+    "file-transfer":{
+        "use": "yes",
+        "base-uri": "/upload",
+        "read-uri": "file",
+        "base-directory": "/files",
+        "count": 10,
+        "type": "hostpath",
+        "table": "MAPI_FILE",
+        "columns": {
+            "parent-path": "parent",
+            "file-name": "file",
+            "timestamp": "timestamp",
+            "owner": "owner" 
+        }
     },
     "database": {
-        "type": "DB_TYPE"
+        "type": "mysql|mongo"
         "id": "DB_USER",
         "pw": "DB_PW",
         "host": "DB_IP",
@@ -115,9 +132,40 @@ cors property let MAPI allow cross-origin-servers to use the api.
 
 ### restapi Property
 
-restapi property define essential information to use REST-API call.
+restapi property define essential information for REST API Controller (which for fetching data from database).
 
-`base-uri`: Define prefix uri to use rest-api. If it is set to `/mapi` and your rest api controller's uri have defined into `/api/user`, the whole request uri will be `/mapi/api/user`.
+`use`: Whether use REST API for fetching datas from `database`. If no, the rest api properties & settings will be ignored. [Value: yes|no]
+
+`base-uri`: Define prefix uri to call rest-api protocol. If it is set to `/mapi` and your rest api controller's uri have defined into `/api/user`, the whole request uri will be `/mapi/api/user`.
+
+`count`: Amount for pagination algorithm. REST API will fetch the amoutn of datas from database as defined. The key for query of pagination must be defined on `REST API Properties`.
+
+## file-transfer Property
+
+file-transfer property define essential informations for File-Transfer Controller.
+
+`use`: Whether use File-Transfer for uploading/downloading files to/from file server. If no, the file-transfer properties & settings will be ignored. [Value: yes|no]
+
+`base-uri`: Define prefix uri to call file-transfer api. If it is set to `/files` and your file-transfer controller's uri have defined into `/board`, the whole request uri will be `/files/board`.
+
+`read-uri`:
+
+`type`: The type of file system. If hostpath, MAPI must have permissions to write/read for the path. [Value: hostpath]
+
+`table`: Table of database for saving index of files & querying information of the files. It must be defined for managing files.
+
+`columns`: Required columns to managing database. Key of the columns are as follows.
+
+```
+parent-path: the concatenation of base-directory and path, which is defined in File-Transfer Controller. As above, base-uri, if directory inside of file-transfer controller is /board, then the parent-path will be /files/board.
+file-name: the file name of uploaded.
+timestamp: timestamp when file have uploaded.
+owner: uploader information. if for testing, you can put trash value.
+```
+
+`base-directory`: Directory of destination for uploading or source for downloading files.
+
+`count`: Amount for pagination algorithm. files will fetch the amojnt of files from File Server as defined. The key for query of pagination must be defined on `File-Transfer Properties`.
 
 ### database Property
 
@@ -139,7 +187,7 @@ database property define Database connect information. If any of config is wrong
 
 jwt property define Json Web Token settings. If your any controller require authorization, jwt will be used.
 
-`use`: Whether use JWT or not.
+`use`: Whether use JWT or not. If no, the jwt properties & settings will be ignored. [Value: yes|no]
 
 `generate-uri`: Uri to generate token. It must not be duplicated with any other API uri. You can generate token to the uri with POST method.
 
@@ -208,8 +256,9 @@ This properties are setting the controller what it would be.
 There are more properties for REST API setting.
 
 - `uri`: The uri to request this property.
-- `model`: the data model to control and which must define in `configs/model`.
-- `dml`: what dml type will it offer. `select, insert, update, delete` are matching with http methods, `get, post, put, delete`.
+- `model`: The data model to control and which must define in `configs/model`.
+- `paging-query`: The query key for using pagination. if the value is `page`, you can call rest api protocol with pagination request; /{base-uri}/{uri}/{id}?page=1
+- `dml`: What dml type will it offer. `select, insert, update, delete` are matching with http methods, `get, post, put, delete`.
 
 The id of REST API controller could be duplicate, however, it should be identified by `uri@id`.
 
@@ -219,6 +268,7 @@ For example, if the id is `test` and uri is `/api`, it's key will be `/api@test`
 {
     "uri": "/api",
     "model": "user",
+    "paging-query": "page",
     "dml": ["select", "insert", "update", "delete"]
 }
 ```
@@ -240,6 +290,69 @@ So total JSON file for REST API,
 ```
 
 If the json file's name is `test.json`, then the file must be exist on `configs/controller/rest/test.json` (`configs/controller/rest` is pre-fixed path).
+
+### File-Transfer Properties
+
+There are more properties for File-Transfer setting.
+
+- `directory`: The own directory for the controller. It will be concatenated with `default.json->file-transfer->base-directory`.
+- `extension`: File extensions that can be uploaded.
+- `custom-database`: Engineer can define custom database for each file-transfer controller. For those, following keys must be set. If you defined custom database, it also must be defined in `Model` as a json file.
+```json
+"custom-database": {
+    "model": "table|collection",
+    "parent-path": "column name",
+    "file-name": "column name",
+    "timestamp": "column name",
+    "owner": "owner"
+}
+```
+
+The id of REST API controller could be duplicate, however, it should be identified by `uri@id`.
+
+For example, if the id is `test` and uri is `/api`, it's key will be `/api@test`. It means, concatenation of `uri@id` must be unique.
+
+
+So total JSON file for File-Transfer,
+
+```json
+{
+    "id": "board",
+    "type": "file-transfer",
+    "auth": "no",
+    "log": "debug",
+    "directory": "/board",
+    "extension": [
+        "jpg", "jpeg", "png", "gif"
+    ],
+    "custom-database": {
+        "model": "MAPI_BOARD",
+        "parent-path": "parent",
+        "file-name": "file",
+        "timestamp": "timestamp",
+        "owner": "owner"    
+    }
+}
+```
+
+For custom database, model would be have,
+
+```json
+{
+    "id": "MAPI_BOARD",
+    "type": "model",
+    "auth": "no",
+    "proxy-list": [],
+    "log": "true",
+    "columns": {
+        "parent": "string",
+        "file": "string",
+        "timestamp": "integer",
+        "owner": "string"
+    },
+    "not-null": ["parent", "file", "timestmap", "owner"]
+}
+```
 
 ## Model
 
@@ -309,7 +422,9 @@ For example, with the below configuration, you can request to `/api/user`.
 {
      ...
      "restapi": {
-          "base-uri": "/"
+          "use": "yes",
+          "base-uri": "/",
+          "count": 10
      },
      ...
 }
@@ -371,6 +486,8 @@ mapi$ cp -r [/path/to/pre-configs/] ./configs
 ~$ docker run -d -p 3000:[PORT] -v ./configs:/app/configs --name mapi devwhoan/mapi:0.0.4
 ```
 ## Nodejs
+
+* The developed environment uses `Nodejs 16.16.0`
 
 If you want to modify and change some codes or whatever, download the code, and just run the nodejs.
 
