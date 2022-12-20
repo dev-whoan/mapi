@@ -1,8 +1,4 @@
-import FileTransferConfigObject from "../../data/object/filetransferConfigObject.js";
-
-import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
 import ModelConfigReader from '../../core/modelReader.js';
-import { arrayToObject, objectKeysToArray } from '../../core/utils.js';
 import FileTransferDataHandler from "../filetransfer/filetransferDataHandler.js";
 import ConfigReader from "../../core/configReader.js";
 import API_TYPE from "../../core/enum/apiType.js";

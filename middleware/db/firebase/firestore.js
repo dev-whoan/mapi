@@ -9,9 +9,7 @@ import ConfigReader from "../../../core/configReader.js";
 import firebaseConfig from '../../../configs/firestore.json' assert {type:"json"};
 
 
-import { collection, doc, setDoc,getFirestore,getDocs,addDoc,where,deleteDoc, connectFirestoreEmulator   } from "firebase/firestore"; 
-
-import { getDatabase , ref, set,query,onValue,update ,remove } from "firebase/database";
+import { collection, doc, setDoc,getFirestore,query,startAfter,getDocs,addDoc,where,deleteDoc, connectFirestoreEmulator ,limit, orderBy  } from "firebase/firestore"; 
 
 
 const baseConfigReader = new ConfigReader();
@@ -39,7 +37,7 @@ export default class FirestoreAccessor {
           this.firebase = initializeApp(firebaseConfigs);
         } catch (e) {
           console.log(e.message.toString());
-          console.log("initialize error firestore");
+          console.log("initialize error firebase");
           return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
         }
     
@@ -106,53 +104,101 @@ export default class FirestoreAccessor {
         if(condition && condition.page)  delete condition.page;
         const queryz = condition ? condition : {};
    
-        console.log("컨디션체크");
-        console.log(condition);
-        
         const queryConstraints = [];
         for(let key in condition)
         {
-   
-        console.log(key);
-        console.log(condition[key]);
         queryConstraints.push(where(key, '==', condition[key]));
         }
-        //console.log(queryConstraints);
-        console.log("컬렉션확인");
-        console.log(collections);
         const db = getFirestore(this.firebase);
-       const q = query(collection(db,collections),...queryConstraints);
        
-      //const q = query(collection(db, "users"), where("first", "==", "Alans"));
-
-      console.log(":Zd");
-        const querySnapshot = await getDocs(q);
-        console.log("z");
-         var result=[];
-         
-
-         console.log(querySnapshot);
-        querySnapshot.forEach((docs)=>{
+        let result=[];
+        let return_Val={};
+        
+        if(paging['pagination-value'])
+        {
             
-            console.log(`${docs.id} => ${docs.data()}`);
-           
-           var k={};
+          
+            var page_count=parseInt(paging['count']);
+            var page_number=parseInt(paging['pagination-value']);
+            
+            if(page_number==1)
+            {
+                const q = query(collection(db,collections),...queryConstraints,limit(page_count));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((docs)=>{
         
-        
-       const lists=Object.keys(docs.data());
-       lists.forEach((val)=>{
-        var ks=val;
-       //k.ks=docs.data()[val];
-       
-       k[val]=docs.data()[val];
-       });
+                  const lists=Object.keys(docs.data());
+                  let res={};
+                  lists.forEach((val)=>{
+                 
+                
+                  res[val]=docs.data()[val];
+                 
+                  });
+                  
+                  result.push(res);
+              });
+            }
+            else{
+                var num=page_count*(page_number-1);
+                const q = query(collection(db,collections),...queryConstraints,limit(num));
+                const querySnapshot = await getDocs(q);
+                
+                const last = querySnapshot.docs[querySnapshot.docs.length - 1]; 
+                const qury=query(collection(db,collections),startAfter(last),limit(page_count));
 
-           result.push(k);
-        });
+                const nextr =await getDocs(qury);
+             
+
+                
+                nextr.forEach((docs)=>{
+                    const lists=Object.keys(docs.data());
+                    let res={};
+                    lists.forEach((val)=>{
+                   
+                  
+                    res[val]=docs.data()[val];
+                   
+                    });
+                    
+                    result.push(res);
+                    
+                   });
+                
+
+            }
+            
+        }
+        else
+        {
+    
+         const q = query(collection(db,collections),...queryConstraints);
+           const querySnapshot = await getDocs(q);
+           querySnapshot.forEach((docs)=>{
+        
+               const lists=Object.keys(docs.data());
+          console.log(lists);
+          let res={};
+            lists.forEach((val)=>{
+          
+          res[val]=docs.data()[val];
+          
+          
+          });
+          
+          result.push(res);
+         });
+
+
+        }
+     
 
      
 return result;
     }    
+
+
+
 
 }
   

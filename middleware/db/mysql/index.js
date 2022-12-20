@@ -53,27 +53,36 @@ export default class MySqlAccessor{
     
     async setAutoIncrement(table){
         let conn = await pool.getConnection();
-        const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
+        try{
+            const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
 
-        if(result[0]){
-            conn.close();
-            conn.end();
-            return result[0];
-        }
-
-        const createAI = await conn.query(
-            `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
-        );
-
-        if(createAI[0]){
-            conn.close();
-            conn.end();
-            return createAI[0];
-        }
-
-        throw new AutoIncrementUndefinedException(
-            `No Auto Increment Column Detected in Table ${table}. MAPI tried to create the column manually, but it failed.`
-        );
+            if(result[0]){
+                conn.close();
+                conn.end();
+                return result[0];
+            }
+    
+            const createAI = await conn.query(
+                `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
+            );
+    
+            if(createAI[0]){
+                conn.close();
+                conn.end();
+                return createAI[0];
+            }
+    
+            throw new AutoIncrementUndefinedException(
+                `No Auto Increment Column Detected in Table [${table}]. MAPI tried to create the column manually, but it failed.`
+            );
+        } catch (e) {
+            if(e.code === 'ER_NO_SUCH_TABLE'){
+                throw new AutoIncrementUndefinedException(
+                    `No Such Table [${table}] Detected in Database. Are you sure the table is exist in the Database?`
+                );
+            }
+            throw e;
+        }         
     }
 
     async jwtAuthorize(table, keyColumns, selectColumns, body){
@@ -113,18 +122,14 @@ export default class MySqlAccessor{
         return result;
     }
 
-    async select(table, columnList, condition, paging){
+    async select(table, columnList, condition, queryOption){
         let cond = (condition ? '' : null);
-        let conn = await pool.getConnection();
-
+        let paginationOffset = null;
+        
         let i = 0;
         if(condition){
             const _leng = Object.keys(condition).length;
             for(let key in condition){
-                if(key == paging.uri) {
-                    condition[key] = paging.lastIndex;
-                    continue;
-                };
                 cond += `${key} = ? `;
                 if(i++ < _leng - 1){
                     cond += ' AND ';
@@ -132,12 +137,19 @@ export default class MySqlAccessor{
             }
         }
 
-        if(paging.lastIndex){
-            if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
-                cond += ' AND ';
-            }
-            
-            cond += `${paging.autoIncrement} > ?`;
+        if(queryOption){
+            if(queryOption['pagination-value']){
+                /*
+                if(!cond)   cond = '';
+                else if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
+                    cond += ' AND ';
+                }
+                cond += `${queryOption['pagination-column']} > ?`;
+                */
+                if(!condition)  condition = {};
+                condition[queryOption['pagination-column']] = (queryOption['pagination-value']-1) * queryOption.count;
+                paginationOffset = (queryOption['pagination-value']-1) * queryOption.count;
+            }    
         }
 
         if(!columnList){
@@ -147,19 +159,30 @@ export default class MySqlAccessor{
         }
 
         let result = null;
-        if(cond)
-            result = await conn.query(`SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${paging.count}`, objectValuesToArray(condition));
+        let conn = await pool.getConnection();
+        let __query = cond ? `SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`
+                           : `SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`;
+
+        if(paginationOffset){
+            __query = `${__query} OFFSET ?`;
+        }
+
+        console.log(__query, condition);
+
+        if(cond || paginationOffset)
+            result = await conn.query(__query, objectValuesToArray(condition));
         else
-            result = await conn.query(`SELECT ${columnList} FROM ${table} LIMIT ${paging.count}`);
-        
+            result = await conn.query(__query);
+
         conn.close();
         conn.end();
         
         return result;
     }
 
-    async update(table, columnList, dataList, condition){
-        let getResult = await this.select(table, null, condition);
+    async update(table, columnList, dataList, condition, modelObject, queryOption){
+        console.log("Hello", queryOption);
+        let getResult = await this.select(table, columnList, condition, queryOption);
         if(getResult.length != 1){
             if(getResult.length > 1){
                 return {

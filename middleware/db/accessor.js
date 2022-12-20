@@ -8,10 +8,7 @@ import FirestoreAccessor from './firebase/firestore.js';
 export default class DBAccessor {
     constructor(){
         this.type = configReader.instance.getConfig().database.type;
-                    console.log(this.type);
-                    console.log(DB_TYPE);
         switch(this.type){
-
             case DB_TYPE.MYSQL:
                 this.operator = new MysqlAccessor();
                 break;
@@ -33,6 +30,7 @@ export default class DBAccessor {
     }
 
     async setAutoIncrement(table){
+        if(this.type!='firestore')
         return this.operator.setAutoIncrement(table);
     }
 
@@ -48,8 +46,8 @@ export default class DBAccessor {
         return this.operator.select(table, columnList, condition, paging)
     }
 
-    async update(table, columnList, dataList, condition, modelObject){
-        return this.operator.update(table, columnList, dataList, condition, modelObject)
+    async update(table, columnList, dataList, condition, modelObject, queryOption){
+        return this.operator.update(table, columnList, dataList, condition, modelObject, queryOption)
     }
 
     async insert(table, columnList, dataList, modelObject){

@@ -80,7 +80,7 @@ export default class MongoAccessor {
         return result;
     }
 
-    async select(collection, fieldList, condition, paging){
+    async select(collection, fieldList, condition, queryOption){
         if(!fieldList){
             throw new NullOrUndefinedException(
                 `Column should be specified in [Model] for REST API`
@@ -90,7 +90,6 @@ export default class MongoAccessor {
 
         const _collection = this.client.db(dbInfo.scheme).collection(collection);
         
-        if(condition && condition.page)  delete condition.page;
         const query = condition ? condition : {};
         /*
             {
@@ -129,8 +128,8 @@ export default class MongoAccessor {
             return [];
         }
 
-        const _skipIndex = paging.lastIndex >= 1 ? paging.lastIndex-1 : 0;
-        const cursor = await _collection.find(query, options).skip(_skipIndex * paging.count).limit(paging.count);
+        const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
+        const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
         let result = [];
         
         await cursor.forEach((item, index) => {
