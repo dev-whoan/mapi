@@ -127,9 +127,7 @@ export default class MongoAccessor {
             return [];
         }
 
-        console.log(queryOption);
         const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
-        console.log(`skipIndex: `, _skipIndex, ` query Count: `, queryOption.count);
         const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
         let result = [];
         

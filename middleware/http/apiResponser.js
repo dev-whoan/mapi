@@ -189,7 +189,6 @@ export default class ApiResponser{
         };
 
         let table = modelObject.data.id;
-        console.log(`hey`, queryOption);
         return apiDataHandler.doModify(table, _columnList, _dataList, _condition, modelObject, queryOption);
     }
 
@@ -262,7 +261,7 @@ export default class ApiResponser{
         if(result instanceof Array && result.length != 0){
             const aiColumn = apiResponser.apiConfigObject.data.autoIncrementColumn;
             result.sort((a, b) => { 
-                return a[aiColumn] > b[aiColumn] ? 1 : -1
+                return a[aiColumn] > b[aiColumn] ? 1 : -1  
             });
         }
 
