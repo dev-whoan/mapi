@@ -19,7 +19,7 @@ const pool = mariadb.createPool({
     database: dbInfo.scheme
 });
 
-export default class MySqlAccessor{
+export default class MariaDBAccessor{
     constructor(){
         
     }
@@ -29,7 +29,7 @@ export default class MySqlAccessor{
         try{
             conn = await pool.getConnection();
             const result = await conn.query("SELECT 1");
-            console.log("MySQL Initialize Test Passed !");
+            console.log("MariaDB Initialize Test Passed !");
         } catch (e) {
             console.log(`Fail to connect database:: [${dbInfo.user}]@${dbInfo.host}:${dbInfo.port}`);
             console.log(e.message);
@@ -251,7 +251,7 @@ export default class MySqlAccessor{
         let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
         try{
             result = await conn.query(query, dataList);
-            result.mysql = true;
+            result.mariadb = true;
         } catch (e) {
             if(e.message.toString().includes('Duplicate entry')){
                 return {

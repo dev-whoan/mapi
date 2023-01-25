@@ -1,7 +1,7 @@
 const DB_TYPE = {
-    MYSQL: 'mysql',
+    MARIADB: 'mariadb',
     MONGO: 'mongo',
-    FILEBASE: 'filebase'
+    FIREBASE: 'firebase'
 };
 
 export default DB_TYPE;

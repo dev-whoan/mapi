@@ -11,7 +11,9 @@ export default class ApiResponser{
     constructor(apiConfigObject){
         this.apiConfigObject = apiConfigObject;
         this.apiId = this.apiConfigObject.data.uri + '@' + this.apiConfigObject.data.id;
-        this.originalUri = this.apiConfigObject.data.uri + '/' + this.apiConfigObject.data.id;
+        this.originalUri = this.apiConfigObject.data.uri === '/'
+                    ? '/' + this.apiConfigObject.data.id
+                    : this.apiConfigObject.data.uri + '/' + this.apiConfigObject.data.id;
         /*
             apiConfigObject = (
                 jsonData.id,
@@ -57,7 +59,9 @@ export default class ApiResponser{
         let model = this.apiConfigObject.data.model;
         let modelObject = modelConfigReader.getConfig(model);
         
+        console.log(uri, this.originalUri);
         let conditionUri = uri.split(this.originalUri)[1];
+
         let _requestConditions = conditionUri.split('/');
         _requestConditions.splice(0, 1);
 

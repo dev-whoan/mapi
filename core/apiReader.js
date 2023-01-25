@@ -10,8 +10,9 @@ import NoModelFoundException from '../exception/NoModelFoundException.js';
 import DBAccessor from '../middleware/db/accessor.js';
 import { stringToBase64 } from './utils.js';
 import AutoIncrementUndefinedException from '../exception/autoIncrementUndefinedException.js';
-import MySqlAccessor from '../middleware/db/mysql/index.js';
+import MySqlAccessor from '../middleware/db/mariadb/index.js';
 import MongoAccessor from '../middleware/db/mongo/index.js';
+import FirebaseAccessor from '../middleware/db/firebase/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -90,12 +91,31 @@ export default class ApiConfigReader{
             );
         }
 
+        console.log(typeof dba)
+        switch(typeof dba){
+            case FirebaseAccessor:
+
+                break;
+            case MySqlAccessor:
+                modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
+                break;
+            case MongoAccessor:
+
+                break;
+            default:
+                break;
+        }
+        /*
+        if(dba instanceof FirebaseAccessor){
+            
+        }
         if(dba instanceof MySqlAccessor){
             modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
         }
         if(dba instanceof MongoAccessor){
 //            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
         }
+        */
         configInfo.data.autoIncrementColumn = aiColumn.COLUMN_NAME;
         this.configInfo.set(configId, configInfo);
     }

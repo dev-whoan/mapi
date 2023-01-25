@@ -1,18 +1,22 @@
 import configReader from '../../core/configReader.js';
-import MysqlAccessor from './mysql/index.js';
+import MariaDBAccessor from './mariadb/index.js';
 import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 import DB_TYPE from '../../core/enum/dbType.js';
+import FirebaseAccessor from './firebase/index.js';
 
 export default class DBAccessor {
     constructor(){
         this.type = configReader.instance.getConfig().database.type;
         switch(this.type){
-            case DB_TYPE.MYSQL:
-                this.operator = new MysqlAccessor();
+            case DB_TYPE.MARIADB:
+                this.operator = new MariaDBAccessor();
                 break;
             case DB_TYPE.MONGO:
                 this.operator = new MongoAccessor();
+                break;
+            case DB_TYPE.FIREBASE:
+                this.operator = new FirebaseAccessor();
                 break;
             default:
                 this.operator = null;

@@ -43,6 +43,41 @@ baseConfigReader.printConfigs();
 
 /* Default */
 
+/* CORS */
+const corsList = baseConfigReader.getConfig()[API_TYPE.CORS]
+if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allow-headers']){
+    throw new NullOrUndefinedException(
+        `Cannot find CORS setting in default.json. ${corsList}:: origin, default, methods, allow-headers must be defined.`
+    );
+}
+
+if(corsList.origin.length === 1){
+    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)){
+        corsList.origin.push(corsList.default);
+    }
+}
+
+app.all('*', function(req, res, next) {
+    let origin;
+    
+    try{
+        origin = corsList.origin.includes(req.headers.origin.toLowerCase()) ? req.headers.origin : corsList.default;
+    } catch (e) {
+        origin = corsList.default;
+    }
+
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Methods", corsList.methods);
+    res.header("Access-Control-Allow-Headers", corsList['allow-headers']);
+
+    if(req.method === 'OPTIONS'){
+        return res.status(200).send();
+    }
+
+    next();
+});
+/* CORS */
+
 /* Model */
 const modelConfigReader = new ModelConfigReader();
 modelConfigReader.printConfigs();
@@ -105,41 +140,6 @@ if(baseConfigReader.getConfig()[API_TYPE.JWT].use && baseConfigReader.getConfig(
     jwtHttpRequestHandler.setRouter(jwtObject);
 }
 /* JWT */
-
-/* CORS */
-const corsList = baseConfigReader.getConfig()[API_TYPE.CORS]
-if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allow-headers']){
-    throw new NullOrUndefinedException(
-        `Cannot find CORS setting in default.json. ${corsList}:: origin, default, methods, allow-headers must be defined.`
-    );
-}
-
-if(corsList.origin.length === 1){
-    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)){
-        corsList.origin.push(corsList.default);
-    }
-}
-
-app.all('*', function(req, res, next) {
-    let origin;
-    
-    try{
-        origin = corsList.origin.includes(req.headers.origin.toLowerCase()) ? req.headers.origin : corsList.default;
-    } catch (e) {
-        origin = corsList.default;
-    }
-
-    res.header("Access-Control-Allow-Origin", origin);
-    res.header("Access-Control-Allow-Methods", corsList.methods);
-    res.header("Access-Control-Allow-Headers", corsList['allow-headers']);
-
-    if(req.method === 'OPTIONS'){
-        return res.status(200).send();
-    }
-
-    next();
-});
-/* CORS */
 
 app.all('*', (req, res) => {
     const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;

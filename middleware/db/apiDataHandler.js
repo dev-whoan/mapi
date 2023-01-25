@@ -34,7 +34,7 @@ export default class ApiDataHandler{
                 return _result;
             }
 
-            if(result.mysql){
+            if(result.mariadb){
                 _result = {
                     '_next_id_': Number(result.insertId)
                 };

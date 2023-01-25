@@ -20,8 +20,15 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri,
             async (req, res, next) => {
+                if(uri !== req.originalUrl){
+                    console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
+                
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
                     configInfo.data.auth === 'yes',
@@ -51,6 +58,13 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri + '/*',
             async (req, res, next) => {
+                if(!req.originalUrl.includes(uri)){
+                    console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
@@ -85,6 +99,14 @@ class RestApiHttpRequestHandler {
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
+                if(uri !== req.originalUrl){
+                    console.log(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
+
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
                     configInfo.data.auth === 'yes',
@@ -114,6 +136,14 @@ class RestApiHttpRequestHandler {
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+                if(uri !== req.originalUrl){
+                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
+
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
                     configInfo.data.auth === 'yes',
@@ -139,6 +169,14 @@ class RestApiHttpRequestHandler {
             uri + '/*',
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+                if(!req.originalUrl.includes(uri)){
+                    console.log(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
 
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
@@ -169,6 +207,14 @@ class RestApiHttpRequestHandler {
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
+                if(uri !== req.originalUrl){
+                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    return res.status(404).json({
+                        code: 404,
+                        message: HTTP_RESPONSE['404']
+                    });
+                }
+
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
                     configInfo.data.auth === 'yes',
@@ -186,7 +232,7 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE[500]
                     };
                 }                                                        
-//                        return result;
+
                 return res.status(result.code).json(result);          
             }
         );
@@ -199,9 +245,11 @@ class RestApiHttpRequestHandler {
         let baseUri = (baseConfig[API_TYPE.REST])['base-uri'];
         baseUri = (baseUri === '/' ? '' : baseUri);
         while( (uri = URIs.next().value) ){
-            let rawUri = uri.toString().split('@');
-            let _uri = baseUri + rawUri[0] + '/' + rawUri[1];
-            let _configInfo = configInfo.get(uri);
+            const rawUri = uri.toString().split('@');
+            const _uri = (rawUri[0] !== '/')
+                 ? baseUri + rawUri[0] + '/' + rawUri[1]
+                 : baseUri + rawUri[0] + rawUri[1];
+            const _configInfo = configInfo.get(uri);
            
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 this.get(_uri, _configInfo);   
