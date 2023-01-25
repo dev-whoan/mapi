@@ -10,7 +10,7 @@ import NoModelFoundException from '../exception/NoModelFoundException.js';
 import DBAccessor from '../middleware/db/accessor.js';
 import { stringToBase64 } from './utils.js';
 import AutoIncrementUndefinedException from '../exception/autoIncrementUndefinedException.js';
-import MySqlAccessor from '../middleware/db/mariadb/index.js';
+import MariaDBAccessor from '../middleware/db/mariadb/index.js';
 import MongoAccessor from '../middleware/db/mongo/index.js';
 import FirebaseAccessor from '../middleware/db/firebase/index.js';
 const __filename = fileURLToPath(import.meta.url);
@@ -96,7 +96,7 @@ export default class ApiConfigReader{
             case FirebaseAccessor:
 
                 break;
-            case MySqlAccessor:
+            case MariaDBAccessor:
                 modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
                 break;
             case MongoAccessor:
@@ -109,7 +109,7 @@ export default class ApiConfigReader{
         if(dba instanceof FirebaseAccessor){
             
         }
-        if(dba instanceof MySqlAccessor){
+        if(dba instanceof MariaDBAccessor){
             modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
         }
         if(dba instanceof MongoAccessor){
