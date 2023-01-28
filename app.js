@@ -47,7 +47,8 @@ if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allo
 }
 
 if(corsList.origin.length === 1){
-    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)){
+    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)
+    ){
         corsList.origin.push(corsList.default);
     }
 }
@@ -59,7 +60,9 @@ app.all('*', function(req, res, next) {
         if(corsList.origin.length === 1 && corsList.origin[0] === '*'){
             origin = req.headers.origin;
         } else {
-            origin = corsList.origin.includes(req.headers.origin.toLowerCase()) ? req.headers.origin : corsList.default;
+            origin = corsList.origin.includes(req.headers.origin.toLowerCase())
+                ? req.headers.origin
+                : corsList.default;
         }
     } catch (e) {
         origin = corsList.default;
