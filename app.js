@@ -54,8 +54,7 @@ if(corsList.origin.length === 1){
 
 app.all('*', function(req, res, next) {
     let origin;
-    console.log("Hello");
-    
+
     try{
         if(corsList.origin.length === 1 && corsList.origin[0] === '*'){
             origin = req.headers.origin;
@@ -66,7 +65,6 @@ app.all('*', function(req, res, next) {
         origin = corsList.default;
     }
 
-    console.log(origin);
     res.header("Access-Control-Allow-Origin", origin);
     res.header("Access-Control-Allow-Methods", corsList.methods);
     res.header("Access-Control-Allow-Headers", corsList['allow-headers']);
