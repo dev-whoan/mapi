@@ -52,14 +52,16 @@ export default class ApiDataHandler{
     async doModify(table, columnList, dataList, condition, modelObject, queryOption){
         let result = await this.dba.update(table, columnList, dataList, condition, modelObject, queryOption);
         
-        if(result.affectedRows){
-            let _result = {
-                '_afftected_rows_': Number(result.affectedRows)
-            };
-
-            return _result;
+        if(result){
+            if(result.affectedRows){
+                let _result = {
+                    '_afftected_rows_': Number(result.affectedRows)
+                };
+    
+                return _result;
+            }
         }
-
+        
         return result;
     }
 
