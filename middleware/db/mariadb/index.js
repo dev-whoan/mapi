@@ -183,12 +183,14 @@ export default class MariaDBAccessor{
     async update(table, columnList, dataList, condition, modelObject, queryOption){
         let getResult = await this.select(table, columnList, condition, queryOption);
         if(getResult.length != 1){
+            console.log(`check1: `, getResult)
             if(getResult.length > 1){
                 return {
                     code: 600
                 }
             } 
 
+            console.log("Inserting...");
             return this.insert(table, columnList, dataList);
         }
         
@@ -249,6 +251,7 @@ export default class MariaDBAccessor{
         }
 
         let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
+        console.log("Insert query: ", query);
         try{
             result = await conn.query(query, dataList);
             result.mariadb = true;
