@@ -252,20 +252,26 @@ export default class MariaDBAccessor{
 
         let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
         console.log("Insert query: ", query);
+        console.log(dataList);
         try{
             result = await conn.query(query, dataList);
             result.mariadb = true;
+            console.log("Inserted");
         } catch (e) {
             if(e.message.toString().includes('Duplicate entry')){
+                console.log("Data duplicated");
                 return {
                     code: 200,
                     message: HTTP_RESPONSE[200]
                 };
             }
+            console.log("Another error: ", e);
         } finally {
             conn.close();
             conn.end();
         }
+
+        console.log("total result:", result);
 
         return result;
     }
