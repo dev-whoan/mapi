@@ -10,22 +10,14 @@ import AutoIncrementUndefinedException from '../../../exception/autoIncrementUnd
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
 
-const pool = mariadb.createPool({
-    host: dbInfo.host,
-    port: dbInfo.port,
-    user: dbInfo.id,
-    password: dbInfo.pw,
-    connectionLimit: 5,
-    database: dbInfo.scheme
-});
-
 export default class MariaDBAccessor{
     constructor(){
-        
+
     }
 
     async initTest(){
         let conn = null;
+        const pool = this.setPool();
         try{
             conn = await pool.getConnection();
             const result = await conn.query("SELECT 1");
@@ -50,8 +42,9 @@ export default class MariaDBAccessor{
         }
         return 0;
     }
-    
+
     async setAutoIncrement(table){
+        const pool = this.setPool();
         let conn = await pool.getConnection();
         try{
             const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
@@ -113,7 +106,8 @@ export default class MariaDBAccessor{
                 _columns += ', ';
             }
         }
-    
+
+        const pool = this.setPool();
         let conn = await pool.getConnection();
         let result = await conn.query(`SELECT ${_columns} FROM ${table} WHERE ${cond}`, _value);
         conn.close();
@@ -159,6 +153,7 @@ export default class MariaDBAccessor{
         }
 
         let result = null;
+        const pool = this.setPool();
         let conn = await pool.getConnection();
         let __query = cond ? `SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`
                            : `SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`;
@@ -166,8 +161,6 @@ export default class MariaDBAccessor{
         if(paginationOffset){
             __query = `${__query} OFFSET ?`;
         }
-
-        console.log(__query, condition);
 
         if(cond || paginationOffset)
             result = await conn.query(__query, objectValuesToArray(condition));
@@ -218,6 +211,7 @@ export default class MariaDBAccessor{
             }
         }
 
+        const pool = this.setPool();
         let conn = await pool.getConnection();
 
         let _query = `UPDATE ${table} SET ${values} WHERE ${cond}`;
@@ -233,6 +227,7 @@ export default class MariaDBAccessor{
                 `ColumnList ${columnList} or DataList ${dataList} is null || Size of ColumnList and DataList are not match.`
             );
         }
+        const pool = this.setPool();
         let conn = await pool.getConnection();
         let result = null;
         let _columnList = '';
@@ -268,6 +263,8 @@ export default class MariaDBAccessor{
     }
 
     async delete(table, condition){
+        const pool = this.setPool();
+        
         let cond = '';
         let conn = await pool.getConnection();
         
@@ -301,5 +298,18 @@ export default class MariaDBAccessor{
         conn.end();
         
         return result;
+    }
+
+    setPool() {
+        const pool = mariadb.createPool({
+            host: dbInfo.host,
+            port: dbInfo.port,
+            user: dbInfo.id,
+            password: dbInfo.pw,
+            connectionLimit: 5,
+            database: dbInfo.scheme
+        });
+
+        return pool;
     }
 }
