@@ -7,6 +7,7 @@ import DBAccessor from "../db/accessor.js";
 import ProxyWorker from "../proxy/worker.js";
 import ApiResponser from "./apiResponser.js";
 import FileTransferResponser from "./fileTransferResponser.js";
+import ApiConfigObject from "../../data/object/apiConfigObject.js";
 
 class RestApiHttpRequestHandler {
     static restApiHttpRequestHandlerInstance;
@@ -94,6 +95,7 @@ class RestApiHttpRequestHandler {
     }
 
     post(uri, configInfo){
+        console.log("Adding post uri:", uri);
         this.app.post(
             uri,
             async (req, res, next) => {
@@ -238,6 +240,10 @@ class RestApiHttpRequestHandler {
         );
     }
 
+    /**
+     * Set Router for RESTful API that manipulating Database
+     * @param {ApiConfigObject} configInfo from ApiConfigReader
+     */
     setRouter(configInfo){
         let URIs = configInfo.keys();
         let uri;
@@ -251,6 +257,20 @@ class RestApiHttpRequestHandler {
                  : baseUri + rawUri[0] + rawUri[1];
             const _configInfo = configInfo.get(uri);
            
+            console.log("Set Router");
+            console.log(_uri, _configInfo);
+            if(_configInfo.data.services.get) {
+                this.get(_uri, _configInfo);
+            }
+            if(_configInfo.data.services.post) {
+                this.post(_uri, _configInfo);
+            }
+            if(_configInfo.data.services.put) {
+                this.put(_uri, _configInfo);
+            }
+            if(_configInfo.data.services.delete) {
+                this.delete(_uri, _configInfo);
+            }
             /*
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 this.get(_uri, _configInfo);   

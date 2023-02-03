@@ -51,8 +51,8 @@ export default class ApiConfigReader{
                 jsonData.log,
                 jsonData.uri,
                 jsonData.services,
-                jsonData.count,
-                jsonData['paging-query']
+                jsonData['page-count'],
+                jsonData['page-query']
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){

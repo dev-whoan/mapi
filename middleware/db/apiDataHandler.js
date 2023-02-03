@@ -6,8 +6,8 @@ export default class ApiDataHandler{
         this.dba = new DBAccessor();
     }
 
-    async doSelect(table, columnList, condition, paging){
-        let result = await this.dba.select(table, columnList, condition, paging);
+    async doSelect(model, query, condition, paging){
+        let result = await this.dba.select(model, query, condition, paging);
     
         let data = [];
         for(let i = 0; i < result.length; i++){
@@ -17,8 +17,8 @@ export default class ApiDataHandler{
         return data;
     }
 
-    async doInsert(table, columnList, dataList, modelObject){
-        let result = await this.dba.insert(table, columnList, dataList, modelObject);
+    async doInsert(model, query, dataList){
+        let result = await this.dba.insert(model, query, dataList);
         if(typeof result === 'object' && ( result.code && result.code === 200 ) ){
             return result;
         }
@@ -28,7 +28,8 @@ export default class ApiDataHandler{
             
             if(result.mongo){
                 _result = {
-                    '_next_id_': result.insertedId
+                    '_next_id_': result.insertedId,
+                    'inserted': true
                 };
 
                 return _result;
@@ -36,7 +37,8 @@ export default class ApiDataHandler{
 
             if(result.mariadb){
                 _result = {
-                    '_next_id_': Number(result.insertId)
+                    '_next_id_': Number(result.insertId),
+                    'inserted': true
                 };
 
                 return _result;
@@ -49,8 +51,8 @@ export default class ApiDataHandler{
         };
     }
 
-    async doModify(table, columnList, dataList, condition, modelObject, queryOption){
-        let result = await this.dba.update(table, columnList, dataList, condition, modelObject, queryOption);
+    async doModify(model, query, preparedValues){
+        let result = await this.dba.update(model, query, preparedValues);
         
         if(result){
             if(result.affectedRows){
@@ -65,8 +67,8 @@ export default class ApiDataHandler{
         return result;
     }
 
-    async doDelete(table, condition){
-        let result = await this.dba.delete(table, condition);
+    async doDelete(model, query, condition){
+        let result = await this.dba.delete(model, query, condition);
         
         if(!result){
             return {

@@ -8,6 +8,7 @@ import ApiConfigObject from '../data/object/apiConfigObject.js';
 import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ServiceConfigObject from '../data/object/serviceConfigObject.js';
+import { SERVICE_ID, SERVICE_TYPE } from '../enum/serviceType.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,17 +82,17 @@ export default class ServiceConfigReader{
     readConfigs(){
         this.serviceConfigInfo = new Map();
         this.readServiceConfigs(
-            path.join(BASE_PATH, 'db'),
-            'service-db@'
+            path.join(BASE_PATH, SERVICE_TYPE.DB),
+            `${SERVICE_ID.DB}@`
         );
         this.readServiceConfigs(
-            path.join(BASE_PATH, 'function'),
-            'service-func@'
+            path.join(BASE_PATH, SERVICE_TYPE.FUNCTION),
+            `${SERVICE_ID.FUNCTION}@`
         );
     };
 
     getConfig(key){
-        return this.configInfo.get(key);
+        return this.serviceConfigInfo.get(key);
     };
 
     printConfigs(){

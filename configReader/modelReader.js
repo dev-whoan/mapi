@@ -13,7 +13,7 @@ const BASE_PATH = path.join(__dirname, '..', 'configs', 'model');
 let configsInApi;
 
 const allowedFormat = [
-    "id", "type", "auth", "proxy-list", "log"
+    "id", "type", "auth", "proxy-list", "log", "ai-key"
 ]
 
 export default class ModelConfigReader{
@@ -40,7 +40,8 @@ export default class ModelConfigReader{
                 jsonData.auth,
                 jsonData['proxy-list'],
                 jsonData['proxy-order'],
-                jsonData.log
+                jsonData.log,
+                jsonData['ai-key']
             );
             
             let configId = oneObject.data.id;

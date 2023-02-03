@@ -38,19 +38,19 @@ export default class DBAccessor {
         return this.operator.jwtAuthorize(table, keyColumns, selectColumns, body);
     }
 
-    async select(table, columnList, condition, paging){
-        return this.operator.select(table, columnList, condition, paging)
+    async select(model, query, condition, paging){
+        return this.operator.select(model, query, condition, paging)
     }
 
-    async update(table, columnList, dataList, condition, modelObject, queryOption){
-        return this.operator.update(table, columnList, dataList, condition, modelObject, queryOption)
+    async update(model, query, prepareValues){
+        return this.operator.update(model, query, prepareValues)
     }
 
-    async insert(table, columnList, dataList, modelObject){
-        return this.operator.insert(table, columnList, dataList, modelObject);
+    async insert(model, query, preparedValues){
+        return this.operator.insert(model, query, preparedValues);
     }
 
-    async delete(table, condition){
-        return this.operator.delete(table, condition);
+    async delete(model, query, condition){
+        return this.operator.delete(model, query, condition);
     }
 }

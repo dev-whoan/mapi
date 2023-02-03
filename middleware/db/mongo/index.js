@@ -74,13 +74,8 @@ export default class MongoAccessor {
         return result;
     }
 
-    async select(collection, fieldList, condition, queryOption){
-        if(!fieldList){
-            throw new NullOrUndefinedException(
-                `Column should be specified in [Model] for REST API`
-            );
-        }
-
+    async select(collection, _query, condition, queryOption){
+        console.log(_query);
         const _collection = this.client.db(dbInfo.scheme).collection(collection);
         
         const query = condition ? condition : {};
@@ -93,6 +88,7 @@ export default class MongoAccessor {
         */
         const modelObject = ModelConfigReader.instance.getConfig(collection);
         
+        /*
         for(let key in condition){
             if(modelObject.data.columns[key] === 'integer'){
                 query[key] = parseInt(condition[key]);
@@ -111,9 +107,8 @@ export default class MongoAccessor {
                 query[key] = new Double(condition[key]);
                 continue;
             }
-
         }
-
+        */
         const options = {};
         const count = await _collection.countDocuments(query, options);
         
@@ -227,8 +222,9 @@ export default class MongoAccessor {
 */
     /* Multiple Insertion */
 
-    async insert(collection, fieldList, valueList, modelObject){
-
+    async insert(collection, query, valueList){
+        return null;
+/*
         if(!fieldList || !valueList || (fieldList.length != valueList.length)){
             throw new InvalidSqlInsertExecuteException(
                 `FieldList ${fieldList} or ValueList ${valueList} is null || Size of FieldList and ValueList are not match.`
@@ -290,6 +286,7 @@ export default class MongoAccessor {
             document: document,
             mongo: true
         }
+        */
     }
 
     /* Default: Multiple Deletion */

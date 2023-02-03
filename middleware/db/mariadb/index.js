@@ -74,14 +74,25 @@ export default class MariaDBAccessor{
 
         const pool = this.setPool();
         let conn = await pool.getConnection();
-        let result = await conn.query(`SELECT ${_columns} FROM ${table} WHERE ${cond}`, _value);
-        conn.close();
-        conn.end();
+        let result = null;
+        try{
+            result = await conn.query(`SELECT ${_columns} FROM ${table} WHERE ${cond}`, _value);
+        } catch (sqlError) {
+            console.error(`[MariaDB]: Fail to select data.`);
+            console.error(sqlError.stack || sqlError);
+            result = {
+                code: 500,
+                message: HTTP_RESPONSE[500]
+            }
+        } finally {
+            conn.close();
+            conn.end();
 
-        return result;
+            return result;
+        }
     }
 
-    async select(table, columnList, condition, queryOption){
+    async select(table, query, condition, queryOption){
         let cond = (condition ? '' : null);
         let paginationOffset = null;
         
@@ -98,179 +109,116 @@ export default class MariaDBAccessor{
 
         if(queryOption){
             if(queryOption['pagination-value']){
-                /*
-                if(!cond)   cond = '';
-                else if(cond !== '' && cond.substring(cond.length - 4) !== 'AND '){
-                    cond += ' AND ';
-                }
-                cond += `${queryOption['pagination-column']} > ?`;
-                */
                 if(!condition)  condition = {};
                 condition[queryOption['pagination-column']] = (queryOption['pagination-value']-1) * queryOption.count;
                 paginationOffset = (queryOption['pagination-value']-1) * queryOption.count;
             }    
         }
-
-        if(!columnList){
-            throw new NullOrUndefinedException(
-                `Column should be specified in [Model] for REST API`
-            );
-        }
-
+        
         let result = null;
         const pool = this.setPool();
-        let conn = await pool.getConnection();
-        let __query = cond ? `SELECT ${columnList} FROM ${table} WHERE ${cond} LIMIT ${queryOption.count}`
-                           : `SELECT ${columnList} FROM ${table} LIMIT ${queryOption.count}`;
+        const conn = await pool.getConnection();
+        let __query = cond ? `${query} WHERE ${cond} LIMIT ${queryOption.count}`
+                           : `${query} LIMIT ${queryOption.count}`;
 
         if(paginationOffset){
             __query = `${__query} OFFSET ?`;
         }
 
-        if(cond || paginationOffset)
-            result = await conn.query(__query, objectValuesToArray(condition));
-        else
-            result = await conn.query(__query);
+        console.log(__query);
 
-        conn.close();
-        conn.end();
-        
-        return result;
+        try{
+            if(cond || paginationOffset)
+                result = await conn.query(__query, objectValuesToArray(condition));
+            else
+                result = await conn.query(__query);
+        } catch (sqlError) {
+            console.error(`[MariaDB]: Fail to select data.`);
+            console.error(sqlError.stack || sqlError);
+            result = {
+                code: 500,
+                message: HTTP_RESPONSE[500]
+            }
+        } finally {
+            conn.close();
+            conn.end();
+            return result;
+        }
     }
 
-    async update(table, columnList, dataList, condition, modelObject, queryOption){
-        let getResult = await this.select(table, columnList, condition, queryOption);
-        if(getResult.length != 1){
-            console.log(`check1: `, getResult)
-            if(getResult.length > 1){
-                return {
-                    code: 600
-                }
-            } 
-
-            console.log("Inserting...");
-            return this.insert(table, columnList, dataList);
-        }
-        
-        if(!columnList || !dataList || (columnList.length != dataList.length)){
-            throw new InvalidSqlInsertExecuteException(
-                `ColumnList(${columnList}) or DataList(${dataList}) is null. Or size of ColumnList and DataList are not match.`
-            );
-        }
-
-        let values = '';
-        for(let i = 0; i < columnList.length; i++){
-            values += columnList[i] + '=?';
-            if(i < columnList.length - 1){
-                values += ', ';
-            }
-        }
-
-        let cond = (condition ? '' : null);
-        let i = 0;
-        if(condition){
-            const _leng = Object.keys(condition).length;
-            for(let key in condition){
-                cond += `${key} = ? `;
-                if(i++ < _leng - 1){
-                    cond += ' AND ';
-                }
-            }
-        }
-
+    async update(table, query, values){
         const pool = this.setPool();
-        let conn = await pool.getConnection();
+        const conn = await pool.getConnection();
 
-        let _query = `UPDATE ${table} SET ${values} WHERE ${cond}`;
-        let result = await conn.query(_query, dataList.concat(objectValuesToArray(condition)));
+        let result = null;
+        try{
+            result = await conn.query(query, values);
+        } catch (sqlError) {
+            console.error(`[MariaDB]: Fail to update data.`);
+            console.error(sqlError.stack || sqlError);
+            return {
+                code: 500,
+                message: HTTP_RESPONSE[500]
+            };
+        } finally {
+            conn.close();
+            conn.end();
+        }
 
         return result;
     }
 
     // currently single insert
-    async insert(table, columnList, dataList){
-        if(!columnList || !dataList || (columnList.length != dataList.length)){
-            throw new InvalidSqlInsertExecuteException(
-                `ColumnList ${columnList} or DataList ${dataList} is null || Size of ColumnList and DataList are not match.`
-            );
-        }
+    async insert(model, query, dataList){
         const pool = this.setPool();
-        let conn = await pool.getConnection();
+        const conn = await pool.getConnection();
+
         let result = null;
-        let _columnList = '';
-        let _dataQuestionMark = '';
 
-        for(let i = 0; i < columnList.length; i++){
-            _columnList += columnList[i];
-            _dataQuestionMark += '?'
-
-            if(i < columnList.length -1){
-                _columnList += ', ';
-                _dataQuestionMark += ', ';
-            }
-        }
-
-        let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
-        console.log("Insert query: ", query);
-        console.log(dataList);
         try{
             result = await conn.query(query, dataList);
             result.mariadb = true;
-            console.log("Inserted");
         } catch (e) {
             if(e.message.toString().includes('Duplicate entry')){
-                console.log("Data duplicated");
+                console.warn("[MariaDB]: Data duplicated: ", query, dataList);
                 return {
                     code: 200,
                     message: HTTP_RESPONSE[200]
                 };
             }
-            console.log("Another error: ", e);
+            
+            console.error(`[MariaDB]: Fail to insert data.`);
+            console.error(e.stack || e);
+            return {
+                code: 500,
+                message: HTTP_RESPONSE[500]
+            }
         } finally {
             conn.close();
             conn.end();
         }
-
-        console.log("total result:", result);
 
         return result;
     }
 
-    async delete(table, condition){
+    async delete(table, query, condition){
         const pool = this.setPool();
-        
-        let cond = '';
-        let conn = await pool.getConnection();
-        
-        let i = 0;
-        if(condition){
-            const _leng = Object.keys(condition).length;
-            for(let key in condition){
-                cond += `${key} = ? `;
-                if(i++ < _leng - 1){
-                    cond += ' AND ';
-                }
-            }
-        }
-
+        const conn = await pool.getConnection();
         let result = null;
         try{
-            result = await conn.query(`DELETE FROM ${table} WHERE ${cond}`, objectValuesToArray(condition));
-        } catch (e) {
-            if(e.message.toString().includes('Unknown column')){
-                return {
-                    code: 204,
-                    message: HTTP_RESPONSE[204]
-                }
+            result = await conn.query(query, condition);
+        } catch (sqlError) {
+            console.error(`[MariaDB]: Fail to delete data.`);
+            console.error(e.stack || e);
+            return {
+                code: 500,
+                message: HTTP_RESPONSE[500]
             }
         } finally {
             conn.close();
             conn.end();
         }
-        
-        conn.close();
-        conn.end();
-        
+
         return result;
     }
 
