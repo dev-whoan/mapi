@@ -1,6 +1,6 @@
-import ConfigReader from "../../core/configReader.js";
-import API_TYPE from "../../core/enum/apiType.js";
-import FILETRANSFER_TYPE from "../../core/enum/fileTransfer.js";
+import ConfigReader from "../../configReader/configReader.js";
+import API_TYPE from "../../enum/apiType.js";
+import FILETRANSFER_TYPE from "../../enum/fileTransfer.js";
 import HostpathFileController from './hostpath/index.js';
 import S3FileController from './s3/index.js';
 

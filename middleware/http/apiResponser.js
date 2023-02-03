@@ -1,10 +1,10 @@
-import HTTP_RESPONSE from '../../core/enum/httpResponse.js';
-import ModelConfigReader from '../../core/modelReader.js';
+import HTTP_RESPONSE from '../../enum/httpResponse.js';
+import ModelConfigReader from '../../configReader/modelReader.js';
 import ApiDataHandler from '../db/apiDataHandler.js';
-import { objectKeysToArray } from '../../core/utils.js';
-import ConfigReader from '../../core/configReader.js';
-import API_TYPE from '../../core/enum/apiType.js';
-import DB_TYPE from '../../core/enum/dbType.js';
+import { objectKeysToArray } from '../../configReader/utils.js';
+import ConfigReader from '../../configReader/configReader.js';
+import API_TYPE from '../../enum/apiType.js';
+import DB_TYPE from '../../enum/dbType.js';
 import { URL } from 'url';
 
 export default class ApiResponser{

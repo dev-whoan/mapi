@@ -1,8 +1,8 @@
-import configReader from '../../core/configReader.js';
+import configReader from '../../configReader/configReader.js';
 import MariaDBAccessor from './mariadb/index.js';
 import MongoAccessor from './mongo/index.js';
 import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
-import DB_TYPE from '../../core/enum/dbType.js';
+import DB_TYPE from '../../enum/dbType.js';
 import FirebaseAccessor from './firebase/index.js';
 
 export default class DBAccessor {

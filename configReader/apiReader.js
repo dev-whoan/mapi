@@ -1,4 +1,4 @@
-import apiType from './enum/apiType.js';
+import apiType from '../enum/apiType.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,7 +21,7 @@ const BASE_PATH = path.join(__dirname, '..', 'configs', 'controller', 'rest');
 let configsInApi;
 
 const allowedFormat = [
-    "id", "type", "auth", "proxy-list", "proxy-order", "log", "uri", "model", "dml"
+    "id", "type", "auth", "proxy-list", "proxy-order", "log", "uri", "services"
 ];
 
 export default class ApiConfigReader{
@@ -50,8 +50,7 @@ export default class ApiConfigReader{
                 jsonData['proxy-order'],
                 jsonData.log,
                 jsonData.uri,
-                jsonData.model,
-                jsonData.dml,
+                jsonData.services,
                 jsonData.count,
                 jsonData['paging-query']
             );
@@ -70,41 +69,9 @@ export default class ApiConfigReader{
             
             this.configInfo.set(configId, oneObject);
             
-            this.setAutoIncrement(configId);
             console.log(this.configInfo.get(configId));
         });
     };
-
-    async setAutoIncrement(configId){
-        let configInfo = this.configInfo.get(configId);
-        let modelConfigReader = new ModelConfigReader();
-        let model = configInfo.data.model;
-        console.log(model);
-        let modelObject = modelConfigReader.getConfig(model);
-        console.log('mo', modelObject);
-        let table = modelObject.data.id;
-
-        let dba = new DBAccessor();
-        let aiColumn = await dba.setAutoIncrement(table);
-        if(!aiColumn || !(aiColumn.COLUMN_NAME)){
-            throw new AutoIncrementUndefinedException(
-                `No Auto Increment Column Detected in Table ${model}. MAPI tried to create the column manually, but it failed.`
-            );
-        }
-
-
-        if(dba instanceof FirebaseAccessor){
-            
-        }
-        if(dba instanceof MariaDBAccessor){
-            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
-        }
-        if(dba instanceof MongoAccessor){
-//            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
-        }
-        configInfo.data.autoIncrementColumn = aiColumn.COLUMN_NAME;
-        this.configInfo.set(configId, configInfo);
-    }
 
     getConfig(key){
         return this.configInfo.get(key);

@@ -1,7 +1,7 @@
-import ConfigReader from "../../core/configReader.js";
-import API_TYPE from "../../core/enum/apiType.js";
-import HTTP_RESPONSE from "../../core/enum/httpResponse.js";
-import { objectKeysToArray } from "../../core/utils.js";
+import ConfigReader from "../../configReader/configReader.js";
+import API_TYPE from "../../enum/apiType.js";
+import HTTP_RESPONSE from "../../enum/httpResponse.js";
+import { objectKeysToArray } from "../../configReader/utils.js";
 import JwtHandler from "../auth/jwtHandler.js";
 import DBAccessor from "../db/accessor.js";
 import ProxyWorker from "../proxy/worker.js";
@@ -251,6 +251,7 @@ class RestApiHttpRequestHandler {
                  : baseUri + rawUri[0] + rawUri[1];
             const _configInfo = configInfo.get(uri);
            
+            /*
             if(_configInfo.data.dml.indexOf('select') !== -1){
                 this.get(_uri, _configInfo);   
             }
@@ -266,6 +267,7 @@ class RestApiHttpRequestHandler {
             if(_configInfo.data.dml.indexOf('delete') !== -1){
                 this.delete(_uri, _configInfo);
             }
+            */
         }
     }
 }

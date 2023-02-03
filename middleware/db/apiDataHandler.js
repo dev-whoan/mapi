@@ -1,4 +1,4 @@
-import HTTP_RESPONSE from "../../core/enum/httpResponse.js";
+import HTTP_RESPONSE from "../../enum/httpResponse.js";
 import DBAccessor from "./accessor.js";
 
 export default class ApiDataHandler{

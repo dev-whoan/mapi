@@ -9,7 +9,7 @@ const generalInfo = JSON.parse(
 );
 
 import ApiReader from './apiReader.js';
-import apiType from './enum/apiType.js';
+import apiType from '../enum/apiType.js';
 
 
 const controlList = [

@@ -1,9 +1,9 @@
-import ConfigReader from '../../../core/configReader.js';
+import ConfigReader from '../../../configReader/configReader.js';
 import mariadb from "mariadb";
 import InvalidSqlInsertExecuteException from '../../../exception/InvalidSqlInsertExecuteException.js';
-import HTTP_RESPONSE from '../../../core/enum/httpResponse.js';
-import { objectValuesToArray } from '../../../core/utils.js';
-import PROCESS_EXIT_CODE from '../../../core/enum/processExitCode.js';
+import HTTP_RESPONSE from '../../../enum/httpResponse.js';
+import { objectValuesToArray } from '../../../configReader/utils.js';
+import PROCESS_EXIT_CODE from '../../../enum/processExitCode.js';
 import NullOrUndefinedException from '../../../exception/nullOrUndefinedException.js';
 import AutoIncrementUndefinedException from '../../../exception/autoIncrementUndefinedException.js';
 
@@ -41,41 +41,6 @@ export default class MariaDBAccessor{
             }
         }
         return 0;
-    }
-
-    async setAutoIncrement(table){
-        const pool = this.setPool();
-        let conn = await pool.getConnection();
-        try{
-            const result = await conn.query(`SELECT COLUMN_NAME, TABLE_SCHEMA as SCHEME, EXTRA FROM information_schema.columns WHERE TABLE_NAME = ? AND EXTRA LIKE '%auto_increment%';`, table);
-
-            if(result[0]){
-                conn.close();
-                conn.end();
-                return result[0];
-            }
-    
-            const createAI = await conn.query(
-                `ALTER TABLE ${table} ADD COLUMN __MAPI_SEQ__ INT UNIQUE NOT NULL AUTO_INCREMENT FIRST;`
-            );
-    
-            if(createAI[0]){
-                conn.close();
-                conn.end();
-                return createAI[0];
-            }
-    
-            throw new AutoIncrementUndefinedException(
-                `No Auto Increment Column Detected in Table [${table}]. MAPI tried to create the column manually, but it failed.`
-            );
-        } catch (e) {
-            if(e.code === 'ER_NO_SUCH_TABLE'){
-                throw new AutoIncrementUndefinedException(
-                    `No Such Table [${table}] Detected in Database. Are you sure the table is exist in the Database?`
-                );
-            }
-            throw e;
-        }         
     }
 
     async jwtAuthorize(table, keyColumns, selectColumns, body){

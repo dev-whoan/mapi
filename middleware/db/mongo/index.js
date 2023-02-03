@@ -1,10 +1,10 @@
-import PROCESS_EXIT_CODE from "../../../core/enum/processExitCode.js";
+import PROCESS_EXIT_CODE from "../../../enum/processExitCode.js";
 import { MongoClient, Long, Double, ObjectID, ObjectId } from "mongodb";
-import ConfigReader from '../../../core/configReader.js';
+import ConfigReader from '../../../configReader/configReader.js';
 import NullOrUndefinedException from "../../../exception/nullOrUndefinedException.js";
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
-import { objectKeysToArray } from "../../../core/utils.js";
-import ModelConfigReader from "../../../core/modelReader.js";
+import { objectKeysToArray } from "../../../configReader/utils.js";
+import ModelConfigReader from "../../../configReader/modelReader.js";
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -40,12 +40,6 @@ export default class MongoAccessor {
         }
         
         return 0;
-    }
-
-    async setAutoIncrement(collection){
-        return {
-            COLUMN_NAME: '_id'
-        };
     }
 
     async jwtAuthorize(collection, keyFields, selectFields, body){

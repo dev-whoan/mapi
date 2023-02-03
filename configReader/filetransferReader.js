@@ -1,4 +1,4 @@
-import apiType from './enum/apiType.js';
+import apiType from '../enum/apiType.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,8 +8,8 @@ import ProxyWorker from '../middleware/proxy/worker.js';
 import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ConfigReader from './configReader.js';
-import API_TYPE from './enum/apiType.js';
-import HTTP_RESPONSE from './enum/httpResponse.js';
+import API_TYPE from '../enum/apiType.js';
+import HTTP_RESPONSE from '../enum/httpResponse.js';
 import FileTransferConfigObject from '../data/object/filetransferConfigObject.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

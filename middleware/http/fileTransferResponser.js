@@ -1,7 +1,7 @@
-import ModelConfigReader from '../../core/modelReader.js';
+import ModelConfigReader from '../../configReader/modelReader.js';
 import FileTransferDataHandler from "../filetransfer/filetransferDataHandler.js";
-import ConfigReader from "../../core/configReader.js";
-import API_TYPE from "../../core/enum/apiType.js";
+import ConfigReader from "../../configReader/configReader.js";
+import API_TYPE from "../../enum/apiType.js";
 
 export default class FileTransferResponser{
     constructor(fileTransferConfigObject){
