@@ -1,7 +1,7 @@
 FROM node:16-alpine
 LABEL email="dev.whoan@gmail.com"
 LABEL name="Eugene Minwhoan Kim"
-LABEL version="0.0.4"
+LABEL version="0.0.6"
 LABEL description="MAPI:: The Fast & Easy REST API Server in Node JS"
 
 WORKDIR /app
