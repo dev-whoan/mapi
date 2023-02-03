@@ -5,6 +5,7 @@ import NullOrUndefinedException from "../../../exception/nullOrUndefinedExceptio
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
 import { objectKeysToArray } from "../../../configReader/utils.js";
 import ModelConfigReader from "../../../configReader/modelReader.js";
+import HTTP_RESPONSE from "../../../enum/httpResponse.js";
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -75,131 +76,124 @@ export default class MongoAccessor {
     }
 
     async select(collection, _query, condition, queryOption){
-        console.log(_query);
-        const _collection = this.client.db(dbInfo.scheme).collection(collection);
-        
-        const query = condition ? condition : {};
-        /*
-            {
-                _id: {
-                    $gt: ObjectId(id)
-                }
+        try{
+            const _collection = this.client.db(dbInfo.scheme).collection(collection);
+            const query = condition ? condition : {};
+    
+            const options = {};
+            const count = await _collection.countDocuments(query, options);
+            
+            if(count === 0){
+                return [];
             }
-        */
-        const modelObject = ModelConfigReader.instance.getConfig(collection);
-        
-        /*
-        for(let key in condition){
-            if(modelObject.data.columns[key] === 'integer'){
-                query[key] = parseInt(condition[key]);
-                continue;
-            }
-            if(modelObject.data.columns[key] === 'long'){
-                query[key] = new Long(condition[key]);
-                continue;
-            }
-
-            if(modelObject.data.columns[key] === 'float'){
-                query[key] = parseFloat(condition[key]);
-                continue;
-            }
-            if(modelObject.data.columns[key] === 'double'){
-                query[key] = new Double(condition[key]);
-                continue;
+    
+            const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
+            const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
+            let result = [];
+            
+            await cursor.forEach((item, index) => {
+                result.push(item);          
+            });
+            
+            return result;
+        } catch (internalError){
+            console.error(`[MongoDB]: Fail to select data. Internal Error Occured.`);
+            console.error(internalError.stack || internalError);
+            return {
+                code: 400,
+                message: HTTP_RESPONSE[400]
             }
         }
-        */
-        const options = {};
-        const count = await _collection.countDocuments(query, options);
         
-        if(count === 0){
-            return [];
-        }
-
-        const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
-        const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
-        let result = [];
-        
-        await cursor.forEach((item, index) => {
-            result.push(item);          
-        });
-        
-        return result;
     }
 
-    async update(collection, fieldList, valueList, condition, modelObject){
-        if(!fieldList || !valueList || (fieldList.length != valueList.length)){
-            throw new InvalidSqlInsertExecuteException(
-                `ColumnList(${fieldList}) or DataList(${valueList}) is null. Or size of ColumnList and DataList are not match.`
-            );
-        }
-
+    async update(collection, query, valueList, condition){
         const document = {};
-
         const specialNumber = {};
-        const objectFields = objectKeysToArray(modelObject.data.columns);
-
+        const modelColumns = ModelConfigReader.instance.configInfo.get(collection).data.columns;
+        const objectFields = objectKeysToArray(modelColumns);
+        
         for(let i = 0; i < objectFields.length; i++){
             let oneKey = objectFields[i];
-            let oneValue = modelObject.data.columns[oneKey];
+            let oneValue = modelColumns[oneKey];
             
             if(oneValue.toLowerCase() === 'long' || oneValue.toLowerCase() === 'double'){
                 specialNumber[oneKey] = oneValue;
             }
         }
 
-        for(let i = 0; i < fieldList.length; i++){
-            let sn = specialNumber[fieldList[i]];
-            let value = valueList[i];
-            if(sn){
-                if(sn === 'integer'){
-                    value = parseInt(value);
-                } else if(sn === 'long'){
-                    value = new Long(value);
-                } else if(sn === 'float'){
-                    value = parseFloat(value);
-                } else if(sn === 'double'){
-                    value = new Double(value);
-                }
-            }
-            document[fieldList[i]] = value;
+        let _query = query;
+        let i = 0;
+        while(_query.includes('?')){
+            _query = _query.replace('\?', `'${valueList[i++]}'`);
         }
-
-        if(Object.keys(document).length != fieldList.length){
-            throw new InvalidSqlInsertExecuteException(
-                `Fail to create update document :: ${document}`
-            );
-        }
-        
-        const _collection = this.client.db(dbInfo.scheme).collection(collection);
-        const options = { upsert: true };
-        const updateDoc = {
-            $set: document,
-        };
-        
-        let result = null;
+        _query = _query.replaceAll( "'", '"');
         try{
-            result = await _collection.updateOne(condition, updateDoc, options);
-        } catch (e) {
-            console.error(e);
-            if(e.message.includes("failed validation")){
-                return {
-                    affectedRows: 0,
-                    success: false,
-                    code: 400,
-                    message: "Request body failed validation"
+            const document = JSON.parse(_query);
+            const fieldList = objectKeysToArray(document);
+            for(let i = 0; i < fieldList.length; i++){
+                let sn = specialNumber[fieldList[i]];
+                let value = valueList[i];
+                if(sn){
+                    if(sn === 'integer'){
+                        value = parseInt(value);
+                    } else if(sn === 'long'){
+                        value = new Long(value);
+                    } else if(sn === 'float'){
+                        value = parseFloat(value);
+                    } else if(sn === 'double'){
+                        value = new Double(value);
+                    }
+                }
+                document[fieldList[i]] = value;
+            }
+
+            if(Object.keys(document).length != fieldList.length){
+                throw new InvalidSqlInsertExecuteException(
+                    `Fail to create update document :: ${document}`
+                );
+            }
+            
+            let result = null;
+            
+            try{
+                const _collection = this.client.db(dbInfo.scheme).collection(collection);
+                const options = { upsert: true };
+                const updateDoc = {
+                    $set: document,
+                };
+                result = await _collection.updateOne(condition, updateDoc, options);
+            } catch (e) {
+                console.error(e);
+                if(e.message.includes("failed validation")){
+                    return {
+                        affectedRows: 0,
+                        success: false,
+                        code: 400,
+                        message: "Request body failed validation"
+                    }
                 }
             }
-        }
 
-        return {
-            code: (result.upsertedCount === 1) ? 201 : 200,
-            affectedRows: result.modifiedCount,
-            acknowledged: result.acknowledged,
-            document: document,
-            mongo: true
-        }
+            return {
+                code: (result.upsertedCount === 1) ? 201 : 200,
+                affectedRows: result.modifiedCount,
+                acknowledged: result.acknowledged,
+                document: document,
+                mongo: true
+            }
 
+        } catch (internalError){
+            console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
+            if(internalError.message.includes('in JSON at position')){
+                console.error(`Fail to parsing json: `, _query);
+            }
+            console.error(internalError.stack || internalError);
+            return {
+                code: 400,
+                message: HTTP_RESPONSE[400]
+            }
+        }
     }
 
     /* Multiple Insertion */
@@ -223,76 +217,148 @@ export default class MongoAccessor {
     /* Multiple Insertion */
 
     async insert(collection, query, valueList){
-        return null;
-/*
-        if(!fieldList || !valueList || (fieldList.length != valueList.length)){
-            throw new InvalidSqlInsertExecuteException(
-                `FieldList ${fieldList} or ValueList ${valueList} is null || Size of FieldList and ValueList are not match.`
-            );
-        }
-
-        const specialNumber = {};
-        const objectFields = objectKeysToArray(modelObject.data.columns);
-
-        for(let i = 0; i < objectFields.length; i++){
-            let oneKey = objectFields[i];
-            let oneValue = modelObject.data.columns[oneKey];
-            
-            if(oneValue.toLowerCase() === 'long' || oneValue.toLowerCase() === 'double'){
-                specialNumber[oneKey] = oneValue;
-            }
-        }
-
-        const _collection = this.client.db(dbInfo.scheme).collection(collection);
-        
-        const document = {};
-        for(let i = 0; i < fieldList.length; i++){
-            let sn = specialNumber[fieldList[i]];
-            let value = valueList[i];
-            if(sn){
-                if(sn === 'integer'){
-                    value = parseInt(value);
-                } else if(sn === 'long'){
-                    value = new Long(value);
-                } else if(sn === 'float'){
-                    value = parseFloat(value);
-                } else if(sn === 'double'){
-                    value = new Double(value);
-                }
-            }
-            document[fieldList[i]] = value;
-        }
-
         let result = null;
+        
+        let _query = query;
+        let i = 0;
+        while(_query.includes('?')){
+            _query = _query.replace('\?', `'${valueList[i++]}'`);
+        }
+        _query = _query.replaceAll( "'", '"');
+
         try{
-            result = await _collection.insertOne(document);
-        } catch (e) {
-            console.error(e);
-            if(e.message.includes("failed validation")){
-                return {
-                    affectedRows: 0,
-                    success: false,
-                    code: 400,
-                    message: "Request body failed validation"
+            const document = JSON.parse(_query);
+            const specialNumber = {};
+            
+            const modelColumns = ModelConfigReader.instance.configInfo.get(collection).data.columns;
+            const objectFields = objectKeysToArray(modelColumns);
+    
+            for(let i = 0; i < objectFields.length; i++){
+                let oneKey = objectFields[i];
+                let oneValue = modelColumns[oneKey];
+                
+                if(oneValue.toLowerCase() === 'long' || oneValue.toLowerCase() === 'double'){
+                    specialNumber[oneKey] = oneValue;
                 }
             }
-        }
+    
+            const fieldList = objectKeysToArray(document);
+            for(let i = 0; i < fieldList.length; i++){
+                let sn = specialNumber[fieldList[i]];
+                let value = valueList[i];
+                if(sn){
+                    if(sn === 'integer'){
+                        value = parseInt(value);
+                    } else if(sn === 'long'){
+                        value = new Long(value);
+                    } else if(sn === 'float'){
+                        value = parseFloat(value);
+                    } else if(sn === 'double'){
+                        value = new Double(value);
+                    }
+                }
+                document[fieldList[i]] = value;
+            }
+            
+            try{
+                const _collection = this.client.db(dbInfo.scheme).collection(collection);
+                result = await _collection.insertOne(document);
+            } catch (sqlError) {
+                console.error(`[MongoDB]: Fail to insert data.`);
+                console.error(sqlError.stack || sqlError);
+                if(e.message.includes("failed validation")){
+                    return {
+                        affectedRows: 0,
+                        success: false,
+                        code: 400,
+                        message: HTTP_RESPONSE[400]
+                    }
+                }
+            }
 
-        return {
-            code: 201,
-            affectedRows: 1,
-            acknowledged: result.acknowledged,
-            insertedId: result.insertedId,
-            document: document,
-            mongo: true
+            return {
+                code: 201,
+                affectedRows: 1,
+                acknowledged: result.acknowledged,
+                insertedId: result.insertedId,
+                document: document,
+                mongo: true
+            }
+        } catch (internalError){
+            console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
+            if(internalError.message.includes('in JSON at position')){
+                console.error(`Fail to parsing json: `, _query);
+            }
+            console.error(internalError.stack || internalError);
+            return {
+                code: 400,
+                message: HTTP_RESPONSE[400]
+            }
         }
-        */
     }
 
     /* Default: Multiple Deletion */
-    async delete(collection, condition){
-        const _collection = this.client.db(dbInfo.scheme).collection(collection);
-        const result = await _collection.deleteMany(condition);
-        return result;
+    async delete(collection, query, valueList){
+        
+        let _query = query;
+        let i = 0;
+        while(_query.includes('?')){
+            _query = _query.replace('\?', `'${valueList[i++]}'`);
+        }
+        _query = _query.replaceAll( "'", '"');
+
+        try{
+            const document = JSON.parse(_query);
+            const specialNumber = {};
+            
+            const modelColumns = ModelConfigReader.instance.configInfo.get(collection).data.columns;
+            const objectFields = objectKeysToArray(modelColumns);
+    
+            for(let i = 0; i < objectFields.length; i++){
+                let oneKey = objectFields[i];
+                let oneValue = modelColumns[oneKey];
+                
+                if(oneValue.toLowerCase() === 'long' || oneValue.toLowerCase() === 'double'){
+                    specialNumber[oneKey] = oneValue;
+                }
+            }
+    
+            const fieldList = objectKeysToArray(document);
+            for(let i = 0; i < fieldList.length; i++){
+                let sn = specialNumber[fieldList[i]];
+                let value = valueList[i];
+                if(sn){
+                    if(sn === 'integer'){
+                        value = parseInt(value);
+                    } else if(sn === 'long'){
+                        value = new Long(value);
+                    } else if(sn === 'float'){
+                        value = parseFloat(value);
+                    } else if(sn === 'double'){
+                        value = new Double(value);
+                    }
+                }
+                document[fieldList[i]] = value;
+            }
+
+            const _collection = this.client.db(dbInfo.scheme).collection(collection);
+            const result = await _collection.deleteMany(document);
+            
+            if(result && result.acknowledged){
+                result.code = 200;
+            }
+
+            return result; 
+        } catch (internalError){
+            console.error(`[MongoDB]: Fail to delete data. Cannot prepare query.`);
+            if(internalError.message.includes('in JSON at position')){
+                console.error(`Fail to parsing json: `, _query);
+            }
+            console.error(internalError.stack || internalError);
+            return {
+                code: 400,
+                message: HTTP_RESPONSE[400]
+            }
+        }
     }
 }

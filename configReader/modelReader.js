@@ -41,6 +41,7 @@ export default class ModelConfigReader{
                 jsonData['proxy-list'],
                 jsonData['proxy-order'],
                 jsonData.log,
+                jsonData.columns,
                 jsonData['ai-key']
             );
             

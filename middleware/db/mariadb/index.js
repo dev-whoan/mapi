@@ -125,8 +125,6 @@ export default class MariaDBAccessor{
             __query = `${__query} OFFSET ?`;
         }
 
-        console.log(__query);
-
         try{
             if(cond || paginationOffset)
                 result = await conn.query(__query, objectValuesToArray(condition));

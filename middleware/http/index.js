@@ -21,6 +21,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri,
             async (req, res, next) => {
+                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(uri !== req.originalUrl){
                     console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
@@ -28,7 +29,6 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE['404']
                     });
                 }
-                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
@@ -59,6 +59,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri + '/*',
             async (req, res, next) => {
+                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(!req.originalUrl.includes(uri)){
                     console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
@@ -66,7 +67,6 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE['404']
                     });
                 }
-                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
@@ -95,7 +95,6 @@ class RestApiHttpRequestHandler {
     }
 
     post(uri, configInfo){
-        console.log("Adding post uri:", uri);
         this.app.post(
             uri,
             async (req, res, next) => {
@@ -157,6 +156,7 @@ class RestApiHttpRequestHandler {
                 );
                 
                 let result = await proxyWorker.doTask(req, res);
+
                 if(!result || !result.code){
                     result = {
                         code: 500,
@@ -173,7 +173,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(!req.originalUrl.includes(uri)){
-                    console.log(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -191,6 +191,7 @@ class RestApiHttpRequestHandler {
                 );
                 
                 let result = await proxyWorker.doTask(req, res);
+                
                 if(!result || !result.code){
                     result = {
                         code: 500,
@@ -210,7 +211,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    console.log(`API Worker - [DELETE] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -257,8 +258,6 @@ class RestApiHttpRequestHandler {
                  : baseUri + rawUri[0] + rawUri[1];
             const _configInfo = configInfo.get(uri);
            
-            console.log("Set Router");
-            console.log(_uri, _configInfo);
             if(_configInfo.data.services.get) {
                 this.get(_uri, _configInfo);
             }
@@ -271,23 +270,6 @@ class RestApiHttpRequestHandler {
             if(_configInfo.data.services.delete) {
                 this.delete(_uri, _configInfo);
             }
-            /*
-            if(_configInfo.data.dml.indexOf('select') !== -1){
-                this.get(_uri, _configInfo);   
-            }
-
-            if(_configInfo.data.dml.indexOf('insert') !== -1){
-                this.post(_uri, _configInfo);
-            }
-
-            if(_configInfo.data.dml.indexOf('update') !== -1){
-                this.put(_uri, _configInfo);
-            }
-
-            if(_configInfo.data.dml.indexOf('delete') !== -1){
-                this.delete(_uri, _configInfo);
-            }
-            */
         }
     }
 }

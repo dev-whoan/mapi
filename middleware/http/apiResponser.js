@@ -84,7 +84,7 @@ export default class ApiResponser{
     }
 
     getApiData(uri, query){
-        console.log(`[MariaDB] Read request arrived(${uri}) `);
+        console.log(`[RESTful API] Data Read request arrived(${uri}) `);
 
         const serviceConfigReader = new ServiceConfigReader();
         let apiDataHandler = new ApiDataHandler();
@@ -115,6 +115,13 @@ export default class ApiResponser{
             const modelObject = modelConfigReader.getConfig(serviceRawQuery.model);
             
             const _condition = this.getConditionFromUri(uri);
+            
+            if(_condition && _condition.code && _condition.code === 400){
+                return {
+                    code: 400,
+                    message: HTTP_RESPONSE[400]
+                }
+            }
 
             const queryOption = {
                 'pagination-key': this.apiConfigObject.data.pagingQuery,
@@ -133,7 +140,7 @@ export default class ApiResponser{
     }
 
     async putApiData(uri, body, query){
-        console.log(`[MariaDB] Update request arrived(${uri}): `, body);
+        console.log(`[RESTful API] Data Update request arrived(${uri}): `, body);
         const serviceConfigReader = new ServiceConfigReader();
         let apiDataHandler = new ApiDataHandler();
         
@@ -142,11 +149,9 @@ export default class ApiResponser{
         if(service.type === SERVICE_TYPE.DB){
             const getInfo = await this.getApiData(uri, query);
             
-            console.log(getInfo);
             if(getInfo.length === 0){
-                //post
-                const result = await this.postApiData(body);
-                console.log("Data Inserted")
+                const result = await this.postApiData(uri, body);
+
                 return result;
             }
 
@@ -173,40 +178,46 @@ export default class ApiResponser{
             let _condition = this.getConditionFromUri(uri);
             let _conditionKey = objectKeysToArray(_condition);
 
-            const condition = [];
+            const preparedValues = [];
 
             const bodyKeys = objectKeysToArray(body);
             for(let _key in bodyKeys){
                 const key = bodyKeys[_key];
                 const substitutionString = `{{ body.${key} }}`;
                 if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[MariaDB]: Unknown field is given to create data [ ${substitutionString} ].`);
+                    console.warn(`[RESTful API]: Unknown field is given for creating data [ ${substitutionString} ].`);
                     return {
                         code: 400,
                         message: HTTP_RESPONSE[400]
                     };
                 }
                 _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                condition.push(body[key]);
+                preparedValues.push(body[key]);
+            }
+
+            if(ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO){
+                const serviceQuery = _serviceQuery;
+                
+                return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, preparedValues, _condition);
             }
 
             for(let _key in _conditionKey){
                 const key = _conditionKey[_key];
                 const substitutionString = `{{ condition.${key} }}`;
                 if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[MariaDB]: Unknown field is given to create data [ ${substitutionString} ].`);
+                    console.warn(`[RESTful API]: Unknown field is given as a condition for creating data [ ${substitutionString} ].`);
                     return {
                         code: 400,
                         message: HTTP_RESPONSE[400]
                     };
                 }
                 _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                condition.push(_condition[key]);
+                preparedValues.push(_condition[key]);
             }
 
             const serviceQuery = _serviceQuery;
 
-            return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, condition);
+            return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, preparedValues);
         }
         
         return {
@@ -216,7 +227,7 @@ export default class ApiResponser{
     }
 
     postApiData(uri, body){
-        console.log(`[MariaDB] Create request arrived(${uri}): `, body);
+        console.log(`[RESTful API] Data Create request arrived(${uri}): `, body);
         const serviceConfigReader = new ServiceConfigReader();
         let apiDataHandler = new ApiDataHandler();
 
@@ -249,7 +260,7 @@ export default class ApiResponser{
                 const key = bodyKeys[_key];
                 const substitutionString = `{{ body.${key} }}`;
                 if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[MariaDB]: Unknown field is given to create data [ ${substitutionString} ].`);
+                    console.warn(`[RESTful API]: Unknown field is given to create data [ ${substitutionString} ].`);
                     return {
                         code: 400,
                         message: HTTP_RESPONSE[400]
@@ -271,7 +282,7 @@ export default class ApiResponser{
     }
 
     deleteApiData(uri, body){
-        console.log(`[MariaDB] Delete request arrived(${uri}): `, body);
+        console.log(`[RESTful API] Data Delete request arrived(${uri}): `, body);
 
         const serviceConfigReader = new ServiceConfigReader();
         let apiDataHandler = new ApiDataHandler();
@@ -298,6 +309,7 @@ export default class ApiResponser{
                 };
             }
             const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
+            
             const bodyKeys = objectKeysToArray(body);
             let _serviceQuery = serviceRawQueryWithModel;
             
@@ -306,7 +318,7 @@ export default class ApiResponser{
                 const key = bodyKeys[_key];
                 const substitutionString = `{{ body.${key} }}`;
                 if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[MariaDB]: Unknown field is given to delete data [ ${substitutionString} ].`);
+                    console.warn(`[RESTful API]: Unknown field is given to delete data [ ${substitutionString} ].`);
                     return {
                         code: 400,
                         message: HTTP_RESPONSE[400]
@@ -395,11 +407,15 @@ export default class ApiResponser{
     async put(proxied, apiResponser, req, res, next){
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
         const result = await apiResponser.putApiData(_requestedUri, req.body, req.query);
-        let _code = 200;
+        
+        let _code = result && result.code ? result.code : 200;
+
         if(!result || result.length == 0){
             _code = 204;
         } else if(result && result.code == 400){
             _code = 400;
+        } else if(result && result.inserted){
+            _code = 201;
         }
         
         let msg = {
@@ -414,13 +430,7 @@ export default class ApiResponser{
     async delete(proxied, apiResponser, req, res, next){
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
         const result = await apiResponser.deleteApiData(_requestedUri, req.body);
-        
-        let msg = {
-            message: HTTP_RESPONSE[204] ,
-            data: result,
-            code: 204
-        };
 
-        return msg;
+        return result;
     }
 }

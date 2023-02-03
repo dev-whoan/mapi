@@ -1,9 +1,9 @@
 import configReader from '../../configReader/configReader.js';
 import MariaDBAccessor from './mariadb/index.js';
 import MongoAccessor from './mongo/index.js';
-import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 import DB_TYPE from '../../enum/dbType.js';
 import FirebaseAccessor from './firebase/index.js';
+import UnknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 
 export default class DBAccessor {
     constructor(){
@@ -42,8 +42,8 @@ export default class DBAccessor {
         return this.operator.select(model, query, condition, paging)
     }
 
-    async update(model, query, prepareValues){
-        return this.operator.update(model, query, prepareValues)
+    async update(model, query, values, condition){
+        return this.operator.update(model, query, values, condition)
     }
 
     async insert(model, query, preparedValues){
