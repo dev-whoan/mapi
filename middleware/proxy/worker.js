@@ -71,23 +71,6 @@ export default class ProxyWorker{
                 jobIndex++;
             }
 
-            /*
-            if(jobIndex == this.proxyList.indexOf('auth')){
-                jobIndex++;
-                let _authresult = authorizeProxy('authorize', req);
-                if(!_authresult){
-                    if(endJob){
-                        endLogProxy(this.taskName);
-                    }
-                    return {
-                        code: 403,
-                        success: false,
-                        message: 'Authentication Failed'
-                    };
-                }
-            }
-            */
-
             if(endJob && jobIndex == this.proxyList.indexOf('end')){
                 jobIndex++;
                 continue;

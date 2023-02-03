@@ -1,4 +1,4 @@
-import apiType from './enum/apiType.js';
+import apiType from '../enum/apiType.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -13,7 +13,7 @@ const BASE_PATH = path.join(__dirname, '..', 'configs', 'model');
 let configsInApi;
 
 const allowedFormat = [
-    "id", "type", "auth", "proxy-list", "log", "columns", "not-null"
+    "id", "type", "auth", "proxy-list", "log", "ai-key"
 ]
 
 export default class ModelConfigReader{
@@ -42,7 +42,7 @@ export default class ModelConfigReader{
                 jsonData['proxy-order'],
                 jsonData.log,
                 jsonData.columns,
-                jsonData['not-null']
+                jsonData['ai-key']
             );
             
             let configId = oneObject.data.id;

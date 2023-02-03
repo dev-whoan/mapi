@@ -1,12 +1,13 @@
-import ConfigReader from "../../core/configReader.js";
-import API_TYPE from "../../core/enum/apiType.js";
-import HTTP_RESPONSE from "../../core/enum/httpResponse.js";
-import { objectKeysToArray } from "../../core/utils.js";
+import ConfigReader from "../../configReader/configReader.js";
+import API_TYPE from "../../enum/apiType.js";
+import HTTP_RESPONSE from "../../enum/httpResponse.js";
+import { objectKeysToArray } from "../../configReader/utils.js";
 import JwtHandler from "../auth/jwtHandler.js";
 import DBAccessor from "../db/accessor.js";
 import ProxyWorker from "../proxy/worker.js";
 import ApiResponser from "./apiResponser.js";
 import FileTransferResponser from "./fileTransferResponser.js";
+import ApiConfigObject from "../../data/object/apiConfigObject.js";
 
 class RestApiHttpRequestHandler {
     static restApiHttpRequestHandlerInstance;
@@ -20,6 +21,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri,
             async (req, res, next) => {
+                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(uri !== req.originalUrl){
                     console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
@@ -27,7 +29,6 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE['404']
                     });
                 }
-                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
@@ -58,6 +59,7 @@ class RestApiHttpRequestHandler {
         this.app.get(
             uri + '/*',
             async (req, res, next) => {
+                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(!req.originalUrl.includes(uri)){
                     console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
@@ -65,7 +67,6 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE['404']
                     });
                 }
-                const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 let apiResponser = new ApiResponser(configInfo);
                 let proxyWorker = new ProxyWorker(
@@ -155,6 +156,7 @@ class RestApiHttpRequestHandler {
                 );
                 
                 let result = await proxyWorker.doTask(req, res);
+
                 if(!result || !result.code){
                     result = {
                         code: 500,
@@ -171,7 +173,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(!req.originalUrl.includes(uri)){
-                    console.log(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -189,6 +191,7 @@ class RestApiHttpRequestHandler {
                 );
                 
                 let result = await proxyWorker.doTask(req, res);
+                
                 if(!result || !result.code){
                     result = {
                         code: 500,
@@ -208,7 +211,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    console.log(`API Worker - [DELETE] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -238,6 +241,10 @@ class RestApiHttpRequestHandler {
         );
     }
 
+    /**
+     * Set Router for RESTful API that manipulating Database
+     * @param {ApiConfigObject} configInfo from ApiConfigReader
+     */
     setRouter(configInfo){
         let URIs = configInfo.keys();
         let uri;
@@ -251,19 +258,16 @@ class RestApiHttpRequestHandler {
                  : baseUri + rawUri[0] + rawUri[1];
             const _configInfo = configInfo.get(uri);
            
-            if(_configInfo.data.dml.indexOf('select') !== -1){
-                this.get(_uri, _configInfo);   
+            if(_configInfo.data.services.get) {
+                this.get(_uri, _configInfo);
             }
-
-            if(_configInfo.data.dml.indexOf('insert') !== -1){
+            if(_configInfo.data.services.post) {
                 this.post(_uri, _configInfo);
             }
-
-            if(_configInfo.data.dml.indexOf('update') !== -1){
+            if(_configInfo.data.services.put) {
                 this.put(_uri, _configInfo);
             }
-
-            if(_configInfo.data.dml.indexOf('delete') !== -1){
+            if(_configInfo.data.services.delete) {
                 this.delete(_uri, _configInfo);
             }
         }

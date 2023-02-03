@@ -5,18 +5,19 @@ import bodyParser from 'body-parser';
 var app = express();
 
 import { fileURLToPath } from 'url';
-import ApiConfigReader from './core/apiReader.js';
-import FileTransferConfigReader from './core/filetransferReader.js';
-import ConfigReader from './core/configReader.js';
-import ModelConfigReader from './core/modelReader.js';
+import ApiConfigReader from './configReader/apiReader.js';
+import FileTransferConfigReader from './configReader/filetransferReader.js';
+import ConfigReader from './configReader/configReader.js';
+import ModelConfigReader from './configReader/modelReader.js';
 
 import DBAccessor from './middleware/db/accessor.js';
 import ProxyWorker from './middleware/proxy/worker.js';
-import API_TYPE from './core/enum/apiType.js';
+import API_TYPE from './enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 
 /* Http Request Handler */
 import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler } from './middleware/http/index.js';
+import ServiceConfigReader from './configReader/serviceReader.js';
 /* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -93,12 +94,18 @@ if(dbaInit != 0){
 }
 /* Model */
 
+/* Service */
+const serviceConfigReader = new ServiceConfigReader();
+serviceConfigReader.printConfigs();
+/* Service */
+
 /* Rest Api */
 if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig()[API_TYPE.REST].use === 'yes'){
     const apiConfigReader = new ApiConfigReader();
     apiConfigReader.printConfigs();
     baseConfigReader.setConfigReaders();
 
+    /*
     let proxyWorker = new ProxyWorker(
         false,
         ["start", "end"],
@@ -109,6 +116,7 @@ if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig
     );
 
     await proxyWorker.doTask();
+    */
 
     const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
     restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);
@@ -120,6 +128,7 @@ if(baseConfigReader.getConfig()[API_TYPE.FILE_TRANSFER].use && baseConfigReader.
     const filetransferConfigReader = new FileTransferConfigReader();
     filetransferConfigReader.printConfigs();
 
+    /*
     let proxyWorker = new ProxyWorker(
         false,
         ["start", "end"],
@@ -130,6 +139,7 @@ if(baseConfigReader.getConfig()[API_TYPE.FILE_TRANSFER].use && baseConfigReader.
     );
 
     await proxyWorker.doTask();
+    */
 
     const fileTransferHttpRequestHandler = new FileTransferHttpRequestHandler(app);
     fileTransferHttpRequestHandler.setRouter(filetransferConfigReader.configInfo);

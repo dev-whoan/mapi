@@ -1,10 +1,10 @@
 import { initializeApp } from "firebase/app";
-import PROCESS_EXIT_CODE from "../../../core/enum/processExitCode.js";
+import PROCESS_EXIT_CODE from "../../../enum/processExitCode.js";
 import NullOrUndefinedException from "../../../exception/nullOrUndefinedException.js";
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
-import { objectKeysToArray } from "../../../core/utils.js";
-import ModelConfigReader from "../../../core/modelReader.js";
-import ConfigReader from '../../../core/configReader.js';
+import { objectKeysToArray } from "../../../configReader/utils.js";
+import ModelConfigReader from "../../../configReader/modelReader.js";
+import ConfigReader from '../../../configReader/configReader.js';
 
 import { getDatabase, ref, set, query, onValue, update, remove } from "firebase/database";
 

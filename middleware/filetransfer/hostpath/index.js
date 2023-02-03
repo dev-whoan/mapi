@@ -8,8 +8,8 @@ const random = () => {
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ConfigReader from '../../../core/configReader.js';
-import API_TYPE from '../../../core/enum/apiType.js';
+import ConfigReader from '../../../configReader/configReader.js';
+import API_TYPE from '../../../enum/apiType.js';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);

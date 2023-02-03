@@ -1,9 +1,9 @@
-import configReader from '../../core/configReader.js';
+import configReader from '../../configReader/configReader.js';
 import MariaDBAccessor from './mariadb/index.js';
 import MongoAccessor from './mongo/index.js';
-import unknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
-import DB_TYPE from '../../core/enum/dbType.js';
+import DB_TYPE from '../../enum/dbType.js';
 import FirebaseAccessor from './firebase/index.js';
+import UnknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
 
 export default class DBAccessor {
     constructor(){
@@ -38,19 +38,19 @@ export default class DBAccessor {
         return this.operator.jwtAuthorize(table, keyColumns, selectColumns, body);
     }
 
-    async select(table, columnList, condition, paging){
-        return this.operator.select(table, columnList, condition, paging)
+    async select(model, query, condition, paging){
+        return this.operator.select(model, query, condition, paging)
     }
 
-    async update(table, columnList, dataList, condition, modelObject, queryOption){
-        return this.operator.update(table, columnList, dataList, condition, modelObject, queryOption)
+    async update(model, query, values, condition){
+        return this.operator.update(model, query, values, condition)
     }
 
-    async insert(table, columnList, dataList, modelObject){
-        return this.operator.insert(table, columnList, dataList, modelObject);
+    async insert(model, query, preparedValues){
+        return this.operator.insert(model, query, preparedValues);
     }
 
-    async delete(table, condition){
-        return this.operator.delete(table, condition);
+    async delete(model, query, condition){
+        return this.operator.delete(model, query, condition);
     }
 }

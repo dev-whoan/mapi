@@ -1,4 +1,4 @@
-import { getUTCTime } from '../../core/utils.js';
+import { getUTCTime } from '../../configReader/utils.js';
 import JwtHandler from '../auth/jwtHandler.js';
 
 const startLogProxy = (taskName) =>{
