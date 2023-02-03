@@ -132,6 +132,7 @@ export default class MariaDBAccessor{
                 result = await conn.query(__query);
         } catch (sqlError) {
             console.error(`[MariaDB]: Fail to select data.`);
+            console.error(`Query: `, __query);
             console.error(sqlError.stack || sqlError);
             result = {
                 code: 500,
@@ -153,6 +154,7 @@ export default class MariaDBAccessor{
             result = await conn.query(query, values);
         } catch (sqlError) {
             console.error(`[MariaDB]: Fail to update data.`);
+            console.error(`Query: `, query);
             console.error(sqlError.stack || sqlError);
             return {
                 code: 500,
@@ -186,6 +188,7 @@ export default class MariaDBAccessor{
             }
             
             console.error(`[MariaDB]: Fail to insert data.`);
+            console.error(`Query: `, query, dataList);
             console.error(e.stack || e);
             return {
                 code: 500,
@@ -207,6 +210,7 @@ export default class MariaDBAccessor{
             result = await conn.query(query, condition);
         } catch (sqlError) {
             console.error(`[MariaDB]: Fail to delete data.`);
+            console.error(`Query: `, query, condition);
             console.error(e.stack || e);
             return {
                 code: 500,

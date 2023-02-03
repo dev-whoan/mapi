@@ -76,10 +76,10 @@ export default class MongoAccessor {
     }
 
     async select(collection, _query, condition, queryOption){
+        const query = condition ? condition : {};
         try{
             const _collection = this.client.db(dbInfo.scheme).collection(collection);
-            const query = condition ? condition : {};
-    
+            
             const options = {};
             const count = await _collection.countDocuments(query, options);
             
@@ -98,6 +98,7 @@ export default class MongoAccessor {
             return result;
         } catch (internalError){
             console.error(`[MongoDB]: Fail to select data. Internal Error Occured.`);
+            console.error(`Query: `, query);
             console.error(internalError.stack || internalError);
             return {
                 code: 400,
@@ -185,9 +186,7 @@ export default class MongoAccessor {
 
         } catch (internalError){
             console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
-            if(internalError.message.includes('in JSON at position')){
-                console.error(`Fail to parsing json: `, _query);
-            }
+            console.error(`Query: `, _query);
             console.error(internalError.stack || internalError);
             return {
                 code: 400,
@@ -286,9 +285,7 @@ export default class MongoAccessor {
             }
         } catch (internalError){
             console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
-            if(internalError.message.includes('in JSON at position')){
-                console.error(`Fail to parsing json: `, _query);
-            }
+            console.error(`Query: `, _query);
             console.error(internalError.stack || internalError);
             return {
                 code: 400,
@@ -351,9 +348,7 @@ export default class MongoAccessor {
             return result; 
         } catch (internalError){
             console.error(`[MongoDB]: Fail to delete data. Cannot prepare query.`);
-            if(internalError.message.includes('in JSON at position')){
-                console.error(`Fail to parsing json: `, _query);
-            }
+            console.error(`Query: `, _query);
             console.error(internalError.stack || internalError);
             return {
                 code: 400,
