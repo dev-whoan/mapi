@@ -176,12 +176,14 @@ export default class MariaDBAccessor{
     async update(table, columnList, dataList, condition, modelObject, queryOption){
         let getResult = await this.select(table, columnList, condition, queryOption);
         if(getResult.length != 1){
+            console.log(`check1: `, getResult)
             if(getResult.length > 1){
                 return {
                     code: 600
                 }
             } 
 
+            console.log("Inserting...");
             return this.insert(table, columnList, dataList);
         }
         
@@ -244,20 +246,27 @@ export default class MariaDBAccessor{
         }
 
         let query = `INSERT INTO ${table} (${_columnList}) VALUES (${_dataQuestionMark})`;
+        console.log("Insert query: ", query);
+        console.log(dataList);
         try{
             result = await conn.query(query, dataList);
             result.mariadb = true;
+            console.log("Inserted");
         } catch (e) {
             if(e.message.toString().includes('Duplicate entry')){
+                console.log("Data duplicated");
                 return {
                     code: 200,
                     message: HTTP_RESPONSE[200]
                 };
             }
+            console.log("Another error: ", e);
         } finally {
             conn.close();
             conn.end();
         }
+
+        console.log("total result:", result);
 
         return result;
     }

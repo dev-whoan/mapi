@@ -79,8 +79,9 @@ export default class ApiConfigReader{
         let configInfo = this.configInfo.get(configId);
         let modelConfigReader = new ModelConfigReader();
         let model = configInfo.data.model;
-
+        console.log(model);
         let modelObject = modelConfigReader.getConfig(model);
+        console.log('mo', modelObject);
         let table = modelObject.data.id;
 
         let dba = new DBAccessor();
@@ -91,21 +92,7 @@ export default class ApiConfigReader{
             );
         }
 
-        console.log(typeof dba)
-        switch(typeof dba){
-            case FirebaseAccessor:
 
-                break;
-            case MariaDBAccessor:
-                modelObject.data.columns[aiColumn.COLUMN_NAME] = 'integer';
-                break;
-            case MongoAccessor:
-
-                break;
-            default:
-                break;
-        }
-        /*
         if(dba instanceof FirebaseAccessor){
             
         }
@@ -115,7 +102,6 @@ export default class ApiConfigReader{
         if(dba instanceof MongoAccessor){
 //            modelObject.data.columns[aiColumn.COLUMN_NAME] = 'ObjectId';
         }
-        */
         configInfo.data.autoIncrementColumn = aiColumn.COLUMN_NAME;
         this.configInfo.set(configId, configInfo);
     }

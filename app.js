@@ -12,11 +12,8 @@ import ModelConfigReader from './core/modelReader.js';
 
 import DBAccessor from './middleware/db/accessor.js';
 import ProxyWorker from './middleware/proxy/worker.js';
-import HTTP_RESPONSE from './core/enum/httpResponse.js';
-import JwtHandler from './middleware/auth/jwtHandler.js';
 import API_TYPE from './core/enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
-import { objectKeysToArray } from './core/utils.js';
 
 /* Http Request Handler */
 import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler } from './middleware/http/index.js';
@@ -38,9 +35,7 @@ app.use(express.json());
 
 /* Default */
 const baseConfigReader = new ConfigReader();
-baseConfigReader.setConfigReaders();
 baseConfigReader.printConfigs();
-
 /* Default */
 
 /* CORS */
@@ -52,16 +47,23 @@ if(!corsList.origin || !corsList.default || !corsList.methods || !corsList['allo
 }
 
 if(corsList.origin.length === 1){
-    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)){
+    if(corsList.origin[0] !== '*' && !corsList.origin.includes(corsList.default)
+    ){
         corsList.origin.push(corsList.default);
     }
 }
 
 app.all('*', function(req, res, next) {
     let origin;
-    
+
     try{
-        origin = corsList.origin.includes(req.headers.origin.toLowerCase()) ? req.headers.origin : corsList.default;
+        if(corsList.origin.length === 1 && corsList.origin[0] === '*'){
+            origin = req.headers.origin;
+        } else {
+            origin = corsList.origin.includes(req.headers.origin.toLowerCase())
+                ? req.headers.origin
+                : corsList.default;
+        }
     } catch (e) {
         origin = corsList.default;
     }
@@ -95,6 +97,7 @@ if(dbaInit != 0){
 if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig()[API_TYPE.REST].use === 'yes'){
     const apiConfigReader = new ApiConfigReader();
     apiConfigReader.printConfigs();
+    baseConfigReader.setConfigReaders();
 
     let proxyWorker = new ProxyWorker(
         false,
