@@ -84,7 +84,7 @@ export default class ApiResponser{
     }
 
     getApiData(uri, query){
-        console.log(`[MariaDB] Read request arrived(${uri}): `, body);
+        console.log(`[MariaDB] Read request arrived(${uri}) `);
 
         const serviceConfigReader = new ServiceConfigReader();
         let apiDataHandler = new ApiDataHandler();
