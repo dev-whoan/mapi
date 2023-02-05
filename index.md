@@ -1,12 +1,11 @@
 # Welcome to MAPI!
 
 # API Express(Nodejs, javascript) Web Server based on MAP
-
-## The previous project is MkWeb(based on java, servlet)
-
 ---
 
 # List of page
+[About](#about-mapi)
+
 [How it Works](#how-it-works)
 
 [How to Request](#how-to-request)
@@ -15,29 +14,46 @@
 
 ---
 
+# About MAPI
+MAPI is well created Web Server Framework. I noticed that developers need to consider lots of things when they started to create new services such that App, Web Service, Science Experimental, etc. And the services can be simply divided into Front-End and Back-End.
+
+But actually, the idea is simply started from Front-End side, the UX like: 'How about creating a food delivery service? People can choose the foods what they want to eat, and the page will show the information about the food. Furthermore, when the order it, the seller will receive the infor where the location to deliver, and information they need.' It means that although the idea is started with User Experience(or User Interface, simply Frontend), developer must design and implement the BackEnd side.
+
+So the concept of MAPI is 'Let the developers be able to just focus on the UX part. Let MAPI take responsibiliity for the Backend, so they can build differentiated, stand out service!'
+
+So the MAPI borned. The MAPI provides DB Fetching, File Server, User Authentication with setting JSON files and process the features with RESTful API Calls.
+
+---
+
 # How it works
 
 ---
 
-All the requests to Web server is processed through HTTP Methods.
+All the requests to MAPI is processed through HTTP Methods.
 
-I try to apply MVC pattern for MAPI, so there are `Model`, `Controller` Objects.(but no View because which is depends on Client side.)
+MAPI is designed using the MVC pattern. Hence there are `Model`, and `Controller` but no View.
 
-Controllers are defining a task what it should do, working with proxy-list (Explained below).
+Controller is about the task what the response is made from for the request. The actions are defined as `Service`.
 
-Once you define controller with proxy-list and order to the controller taks should call, of course there could no proxy-list, it will run sequentially.
+For example you can define `CRUD` task(here in after referred to as task) and `HTTP Methods` correspondly. And when the request is coming to MAPI with one of defined `HTTP Method`, the corresponding task will be processed.
 
-For example, proxy-list with pre-defined functions `start, end`, and proxy-order with `1`, it will call `start` task, and controller task, and `end` task.
+The task is defined as `Service`. `Service` can define the corresponding request and task that is explained above. However, each `HTTP Methods` can defined only once. It means, no duplicated `HTTP Method` is allowed.
 
-So you can think Controller is actually method which you want to run.
+In summary, when http request is come, router will searching for corresponding `Controller`. And then, `Controller` will look for corresponding `Service`. If there is any corresponding `Service` and `Controller`, the things will be processed, and return the result.
 
-`HTTP Request for Controller -> Added to Proxy Worker -> Run Tasks Based on Proxy-List`
+It's similiar with `Dependency Injection`, and `Inversion of Control`.
+
+## Define
+- `Router` -> `Controller` -> `Service`
+
+## Procedure
+- `Router` <- `Controller` <- `Service`
 
 You have to set all the needed things `JSON` file, according to its' right path under the `configs` folder.
 
 ## Prerequisites
 
-You should prepare configuration for MAPI. The base files are `default.json`, `model directory`, `controller directory`, and `services directory`.
+You should prepare configuration for MAPI. The base files are `default.json`, `model`, `controller`, and `service`.
 
 ```
 configs
@@ -45,6 +61,11 @@ configs
 └─── controller
 │    └    rest
 │         └─── [some_jsons_for_rest_setting.json]
+└─── services
+│    └    db
+│         └─── [some_jsons_for_db_sql_setting.json]
+│    └    function
+│         └─── [some_jsons_for_function_setting.json]
 └─── model
      └─── [some_jsons_for_model_setting.json]     
 ```
@@ -88,7 +109,7 @@ So the file is located right under `configs/`, it will be `configs/default.json`
         }
     },
     "database": {
-        "type": "mysql|mongo"
+        "type": "mariadb|mongo",
         "id": "DB_USER",
         "pw": "DB_PW",
         "host": "DB_IP",
@@ -142,36 +163,13 @@ restapi property define essential information for REST API Controller (which for
 
 ## file-transfer Property
 
-file-transfer property define essential informations for File-Transfer Controller.
-
-`use`: Whether use File-Transfer for uploading/downloading files to/from file server. If no, the file-transfer properties & settings will be ignored. [Value: yes|no]
-
-`base-uri`: Define prefix uri to call file-transfer api. If it is set to `/files` and your file-transfer controller's uri have defined into `/board`, the whole request uri will be `/files/board`.
-
-`read-uri`:
-
-`type`: The type of file system. If hostpath, MAPI must have permissions to write/read for the path. [Value: hostpath]
-
-`table`: Table of database for saving index of files & querying information of the files. It must be defined for managing files.
-
-`columns`: Required columns to managing database. Key of the columns are as follows.
-
-```
-parent-path: the concatenation of base-directory and path, which is defined in File-Transfer Controller. As above, base-uri, if directory inside of file-transfer controller is /board, then the parent-path will be /files/board.
-file-name: the file name of uploaded.
-timestamp: timestamp when file have uploaded.
-owner: uploader information. if for testing, you can put trash value.
-```
-
-`base-directory`: Directory of destination for uploading or source for downloading files.
-
-`count`: Amount for pagination algorithm. files will fetch the amojnt of files from File Server as defined. The key for query of pagination must be defined on `File-Transfer Properties`.
+It is not supported currently. Will be updated later.
 
 ### database Property
 
 database property define Database connect information. If any of config is wrong, hence MAPI cannot connect to the database, MAPI will be shutdown with database error.
 
-`type`: Type of Database. Now only supports MySQL, MariaDB, MongoDB. (Value: `mysql, mongo`)
+`type`: Type of Database. Now only supports MariaDB, MongoDB, and Firestore. (Value: `mariadb, mongo, firestore`)
 
 `id`: User id of Database
 
@@ -256,9 +254,9 @@ This properties are setting the controller what it would be.
 There are more properties for REST API setting.
 
 - `uri`: The uri to request this property.
-- `model`: The data model to control and which must define in `configs/model`.
-- `paging-query`: The query key for using pagination. if the value is `page`, you can call rest api protocol with pagination request; /{base-uri}/{uri}/{id}?page=1
-- `dml`: What dml type will it offer. `select, insert, update, delete` are matching with http methods, `get, post, put, delete`.
+- `page-query`: The query key for using pagination. if the value is `page`, you can call rest api protocol with pagination request; /{base-uri}/{uri}/{id}?page=1
+- `page-count`: The query key for using pagination. if the value is `10`, response will be include maximum 10 datas per each page. Deprecated, use `configs/default.json -> count` instead.
+- `services`: The services that defining `crud task` for `http request`. If there is no method defined for the `http method`, it will return `404 Not Found`. Also each services must be defined under `configs/services/[db|function] -> one of json`.
 
 The id of REST API controller could be duplicate, however, it should be identified by `uri@id`.
 
@@ -267,11 +265,36 @@ For example, if the id is `test` and uri is `/api`, it's key will be `/api@test`
 ```json
 {
     "uri": "/api",
-    "model": "user",
-    "paging-query": "page",
-    "dml": ["select", "insert", "update", "delete"]
+    "page-query": "page",
+    "page-count": 10,
+    "services": {
+        "get": {
+            "type": "db",
+            "id": "user_api",
+            "service": "read"
+        },
+        "post": {
+            "type": "db",
+            "id": "user_api",
+            "service": "create"
+        },
+        "put": {
+            "type": "db",
+            "id": "user_api",
+            "service": "update"
+        },
+        "delete": {
+            "type": "db",
+            "id": "user_api",
+            "service": "delete"
+        }
+    }
 }
 ```
+
+According to above json format, it infer that there is service named `user_api` under `configs/services/db/ one of json`. Note that, the `id` of service doesn't mean the `file name of json` is user_api.
+
+Also the view can request with `get, post, put, delete` http methods.
 
 So total JSON file for REST API,
 
@@ -283,82 +306,41 @@ So total JSON file for REST API,
     "proxy-list": ["start", "end"],
     "proxy-order": 1,
     "log": "debug",
-    "uri": "/api",
-    "model": "user",
-    "dml": ["select", "insert", "update", "delete"]
+    "uri": "/",
+    "page-query": "page",
+    "page-count": 10,
+    "services": {
+        "get": {
+            "type": "db",
+            "id": "user_api",
+            "service": "read"
+        },
+        "post": {
+            "type": "db",
+            "id": "user_api",
+            "service": "create"
+        },
+        "put": {
+            "type": "db",
+            "id": "user_api",
+            "service": "update"
+        },
+        "delete": {
+            "type": "db",
+            "id": "user_api",
+            "service": "delete"
+        }
+    }
 }
 ```
 
 If the json file's name is `test.json`, then the file must be exist on `configs/controller/rest/test.json` (`configs/controller/rest` is pre-fixed path).
 
-### File-Transfer Properties
-
-There are more properties for File-Transfer setting.
-
-- `directory`: The own directory for the controller. It will be concatenated with `default.json->file-transfer->base-directory`.
-- `extension`: File extensions that can be uploaded.
-- `custom-database`: Engineer can define custom database for each file-transfer controller. For those, following keys must be set. If you defined custom database, it also must be defined in `Model` as a json file.
-```json
-"custom-database": {
-    "model": "table|collection",
-    "parent-path": "column name",
-    "file-name": "column name",
-    "timestamp": "column name",
-    "owner": "owner"
-}
-```
-
-The id of REST API controller could be duplicate, however, it should be identified by `uri@id`.
-
-For example, if the id is `test` and uri is `/api`, it's key will be `/api@test`. It means, concatenation of `uri@id` must be unique.
-
-
-So total JSON file for File-Transfer,
-
-```json
-{
-    "id": "board",
-    "type": "file-transfer",
-    "auth": "no",
-    "log": "debug",
-    "directory": "/board",
-    "extension": [
-        "jpg", "jpeg", "png", "gif"
-    ],
-    "custom-database": {
-        "model": "MAPI_BOARD",
-        "parent-path": "parent",
-        "file-name": "file",
-        "timestamp": "timestamp",
-        "owner": "owner"    
-    }
-}
-```
-
-For custom database, model would be have,
-
-```json
-{
-    "id": "MAPI_BOARD",
-    "type": "model",
-    "auth": "no",
-    "proxy-list": [],
-    "log": "true",
-    "columns": {
-        "parent": "string",
-        "file": "string",
-        "timestamp": "integer",
-        "owner": "string"
-    },
-    "not-null": ["parent", "file", "timestmap", "owner"]
-}
-```
-
 ## Model
 
 Model is the data what you want to get, modify, and so on.
 
-So the model is related with database. For now, only support RDB, tested on `mariadb`.
+So the model is related with database. For now, `mariadb, mongodb, firestore of Google` is supported.
 
 ### Model Setting
 
@@ -366,22 +348,21 @@ It follows default knowledge with the controller.
 
 There are more properties for Model setting. 
 
-- `id`: it is not same as general property, it is pointing table of database. it must be unique among the model setting. (Table is corresponded to `Collection` in `MongoDB`.)
-- `columns`: columns to support for rest api, which must column of database's table. (Columns are corresponded to `field` in `MongoDB`.)
-- `not-null`: not null columns for when sending request about this model. it is usually match with database's not null column.
+- `id`: It is not same as general property, it is pointing table of database. it must be unique among the model setting. (Table is corresponded to `Collection` in `MongoDB`.)
+- `columns`: Columns to support Document DB for rest api. If your Collection uses any validation rule, it must be defined. support values: `integer, long, float, double`. Other things you should put with stringify value (i.e, json, yaml, ...).
+- `ai-key`: It is one of column(field) for identifying the data. For RDB, it is name of `auto-increment` column, and Document DB, name of uuid column.
 
 * Please be-care that, you must specify the data type for number, `long, double` in MongoDB if you use MongoDB Collection's validation.
 * In MongoDB, if you don't specify into right data type, it can bring about `Fail to Validation` Error.
-* It means, for MySQL(MariaDB), you can just right integer, float, however, it can be reason of overflow.
 
 ```json
 {
     "columns": {
         "SEQ": "integer",
         "NAME": "string",
-        "AGE": "integer"
+        "AGE": "long"
     },
-    "not-null": ["NAME"] 
+    "ai-key": "SEQ"
 }
 ```
 
@@ -389,20 +370,122 @@ So total JSON file for Model,
 
 ```json
 {
-    "id": "user",
+    "id": "client",
     "type": "model",
+    "auth": "no",
     "proxy-list": [],
     "log": "true",
     "columns": {
         "SEQ": "integer",
         "NAME": "string",
-        "AGE": "integer"
+        "AGE": "long"
     },
-    "not-null": ["NAME"]
+    "ai-key": "SEQ"
 }
 ```
 
 If the json file's name is `user.json`, then the file must be exist on `configs/model/user.json` (`configs/model` is pre-fixed path).
+
+## Service
+
+There are 2 type for the `Service`. First one is about db sql, and another is about function. As explained above, the service is one of excutable things when the `HTTP Request` is come.
+
+Prefix path for Service json files is: `configs/services`
+
+### Common format for Service
+
+```
+{
+    "id": "user_api",
+    "log": "yes",
+    "create": {
+        ...
+    },
+    "read": {
+        ...
+    },
+    "update": {
+        ...
+    },
+    "delete": {
+        ...
+    }
+}
+```
+
+According to above json, `user_api` service can process totally 4 `CRUD tasks`.
+- `create`: corresponding to `post http method`
+- `read`: corresponding to `get http method`
+- `update`: corresponding to `put http method`
+- `delet `: corresponding to `delete http method`
+
+### db Service Setting
+
+`db` is set of sqls. It consists of `model` and `query`.
+
+- `model`: It is one of `Model` you defined in `configs/model`. If it is not defined, when your service try to process the http request, error will be occured.
+- `query`: It describe sql to execute. query will have dynamic value capsuled with `{{ }}`, for example `{{ body.NAME }}`. `query` can have 3 type of `{{ }}`: `{{ model }}`, `{{ body. }}`, and `{{ condition. }}`
+
+    + `{{ model }}` is pointing right above `model` property.
+    + `{{ body. }}` is corresponding to body parameter. For example, `{{ body.NAME }}`, http request must include NAME field on body parameter. If body parameter include `NAME: Eugene`, `{{ body.NAME }}` will be changed into `Eugene`.
+    + `{{ condition. }}` is corresponding to URI segment. For example, `{{ condition.NAME }}`, http uri must looks like: `/{uri_to_request_api}/NAME/Eugene`. It means, `{{ condition.NAME }}` will be changed into `Eugene`
+
+If you defined sql with `{{ }}` option, however, your request doesn't include it, it will occur error.
+
+#### RDB Example
+
+```
+{
+    "id": "user_api",
+    "log": "yes",
+    "create": {
+        "model": "client",
+        "query": "INSERT INTO {{ model }} ( NAME, AGE, DESCRIPTION ) VALUES ( {{ body.NAME }}, {{ body.AGE }}, 'hello' )"
+    },
+    "read": {
+        "model": "client",
+        "query": "SELECT * FROM {{ model }}"
+    },
+    "update": {
+        "model": "client",
+        "query": "UPDATE {{ model }} SET NAME = {{ body.NAME }}, AGE = {{ body.AGE }} WHERE SEQ = {{ condition.SEQ }}"
+    },
+    "delete": {
+        "model": "client",
+        "query": "DELETE FROM {{ model }} WHERE SEQ = {{ body.SEQ }}"
+    }
+}
+```
+
+#### Document DB Example
+
+```
+{
+    "id": "user_api_mongo",
+    "log": "yes",
+    "create": {
+        "model": "client",
+        "query": "{ 'NAME': {{ body.NAME }}, 'AGE': {{ body.AGE }} }"
+    },
+    "read": {
+        "model": "client",
+        "query": ""
+    },
+    "update": {
+        "model": "client",
+        "query": "{ 'NAME': {{ body.NAME }}, 'AGE': {{ body.AGE }} }"
+    },
+    "delete": {
+        "model": "client",
+        "query": "{ 'NAME': {{ body.NAME }} }"
+    }
+}
+```
+
+### File-Transfer Properties
+
+File Transfer is not supported currently. Will be updated later.
+
 
 # How to Request
 
@@ -468,13 +551,18 @@ configs
 └─── controller
 │    └    rest
 │         └─── [some_jsons_for_rest_setting.json]
+└─── services
+│    └    db
+│         └─── [some_jsons_for_db_sql_setting.json]
+│    └    function
+│         └─── [some_jsons_for_function_setting.json]
 └─── model
-     └─── [some_jsons_for_model_setting.json]     
+     └─── [some_jsons_for_model_setting.json]    
 ```
 
 ## Docker
 
-### Lateset Version:: 0.0.4
+### Lateset Version:: 0.0.6
 
 If you finished to set the `Prerequisites` files such that controller and model in some location with name `/path/to/configs/` (ex. `/home/mapi/configs`), you can run with following docker commands
 
@@ -483,11 +571,11 @@ If you finished to set the `Prerequisites` files such that controller and model 
 # Copy Prerequisites configuration into configs
 ~$ cd mapi
 mapi$ cp -r [/path/to/pre-configs/] ./configs
-~$ docker run -d -p 3000:[PORT] -v ./configs:/app/configs --name mapi devwhoan/mapi:0.0.4
+~$ docker run -d -p 3000:[PORT] -v ./configs:/app/configs --name mapi devwhoan/mapi:0.0.6
 ```
 ## Nodejs
 
-### Latest Version: 0.0.5
+### Latest Version: 0.0.6
 
 * The developed environment uses `Nodejs 16.16.0`
 
