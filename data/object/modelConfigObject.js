@@ -27,6 +27,7 @@ export default class ModelConfigObject{
                 console.log("New Config  Modified Time: ", newModified);
                 console.log("======== Caused by File Update...========");
                 ModelConfigReader.instance.updateConfigs();
+                ModelConfigReader.instance.printConfigs();
                 console.log("=========Successfuly ** Reloaded=========")
                 console.log("=========Reload Model Config Files=========")
                 return true;

@@ -53,6 +53,24 @@ const getServiceData = (serviceKey) => {
     }
 }
 
+const getModelData = (model) => {
+    const modelObject = ModelConfigReader.instance.getConfig(model);
+
+    if (!modelObject) {
+        console.error(`[sqlExecutor -> getModelData]: Cannot find model [${model}].`);
+        return null;
+    }
+
+    try{
+        modelObject.updateConfigs();
+        return ModelConfigReader.instance.getConfig(model).getData();
+    } catch (e) {
+        console.error(e.stack || e);
+        return null;
+    }
+    
+}
+
 const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
     const apiDataHandler = new ApiDataHandler();
     const modelConfigReader = new ModelConfigReader();
@@ -74,18 +92,17 @@ const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
             message: "Internal Server Error"
         };
     }
-    const serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
-    const modelObject = modelConfigReader.getConfig(serviceRawQuery.model);
-    
-    if (!modelObject) {
-        console.error(`Cannot find model [${serviceRawQuery.model}].`);
+
+    const modelData = getModelData(serviceRawQuery.model);
+    if(!modelData){
+        console.error(`NoSuchMapiSettingConfigFoundException: [${serviceRawQuery.model}]`);
         return {
             code: 500,
             message: HTTP_RESPONSE[500]
-        };
+        }
     }
 
-    const modelData = modelObject.getData();
+    const serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
     const _condition = getConditionFromUri(uri, originalUri);
 
     if (_condition && _condition.code && _condition.code === 400) {
@@ -124,6 +141,7 @@ const create = async (uri, body, service) => {
     console.log('Check me -> ', serviceData);
 
     const serviceRawQuery = (serviceData.create) ? serviceData.create : null;
+    
     if (!serviceRawQuery) {
         console.error(`Cannot find service query [${serviceKey}.read].`);
         return {
@@ -131,7 +149,19 @@ const create = async (uri, body, service) => {
             message: "Internal Server Error"
         };
     }
-    const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
+    const modelData = getModelData(serviceRawQuery.model);
+    if(!modelData){
+        console.error(`NoSuchMapiSettingConfigFoundException: [${serviceRawQuery.model}]`);
+        return {
+            code: 500,
+            message: HTTP_RESPONSE[500]
+        }
+    }
+
+    console.log("Check me -> ", modelData);
+
+    const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', modelData.id);
+    
     const bodyKeys = objectKeysToArray(body);
     let _serviceQuery = serviceRawQueryWithModel;
     const condition = [];
@@ -151,7 +181,7 @@ const create = async (uri, body, service) => {
 
     const serviceQuery = _serviceQuery;
 
-    return apiDataHandler.doInsert(serviceRawQuery.model, serviceQuery, condition);
+    return apiDataHandler.doInsert(modelData.id, serviceQuery, condition);
 };
 
 const update = async (uri, query, body, originalUri, apiConfigDataObject, service) => {
@@ -159,7 +189,7 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
     const getInfo = await read(uri, query, originalUri, apiConfigDataObject, service);
 
     if (getInfo.length === 0) {
-        const result = await create(uri, body);
+        const result = await create(uri, body, service);
 
         return result;
     }
@@ -181,6 +211,15 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
             code: 500,
             message: "Internal Server Error"
         };
+    }
+
+    const modelData = getModelData(serviceRawQuery.model);
+    if(!modelData){
+        console.error(`NoSuchMapiSettingConfigFoundException: [${serviceRawQuery.model}]`);
+        return {
+            code: 500,
+            message: HTTP_RESPONSE[500]
+        }
     }
 
     let _serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
@@ -249,6 +288,16 @@ const _delete = async (uri, body, service) => {
             message: "Internal Server Error"
         };
     }
+
+    const modelData = getModelData(serviceRawQuery.model);
+    if(!modelData){
+        console.error(`NoSuchMapiSettingConfigFoundException: [${serviceRawQuery.model}]`);
+        return {
+            code: 500,
+            message: HTTP_RESPONSE[500]
+        }
+    }
+
     const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
     
     const bodyKeys = objectKeysToArray(body);
