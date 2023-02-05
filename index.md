@@ -155,7 +155,7 @@ cors property let MAPI allow cross-origin-servers to use the api.
 
 restapi property define essential information for REST API Controller (which for fetching data from database).
 
-`use`: Whether use REST API for fetching datas from `database`. If no, the rest api properties & settings will be ignored. [Value: yes|no]
+`use`: Whether use REST API for fetching datas from `database`. If no, the rest api properties & settings will be ignored. (Value: yes|no)
 
 `base-uri`: Define prefix uri to call rest-api protocol. If it is set to `/mapi` and your rest api controller's uri have defined into `/api/user`, the whole request uri will be `/mapi/api/user`.
 
@@ -185,7 +185,7 @@ database property define Database connect information. If any of config is wrong
 
 jwt property define Json Web Token settings. If your any controller require authorization, jwt will be used.
 
-`use`: Whether use JWT or not. If no, the jwt properties & settings will be ignored. [Value: yes|no]
+`use`: Whether use JWT or not. If no, the jwt properties & settings will be ignored. (Value: yes|no)
 
 `generate-uri`: Uri to generate token. It must not be duplicated with any other API uri. You can generate token to the uri with POST method.
 
