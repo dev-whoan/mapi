@@ -130,6 +130,8 @@ export default class ApiResponser{
                 count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
             };
 
+            console.log(`serviceQuery: `, serviceQuery);
+
             return apiDataHandler.doSelect(serviceRawQuery.model, serviceQuery, _condition, queryOption);
         }
 
