@@ -8,6 +8,8 @@ import ProxyWorker from "../proxy/worker.js";
 import ApiResponser from "./apiResponser.js";
 import FileTransferResponser from "./fileTransferResponser.js";
 import ApiConfigObject from "../../data/object/apiConfigObject.js";
+import ApiConfigReader from "../../configReader/apiReader.js";
+import FileTransferConfigReader from "../../configReader/filetransferReader.js";
 
 class RestApiHttpRequestHandler {
     static restApiHttpRequestHandlerInstance;
@@ -17,7 +19,7 @@ class RestApiHttpRequestHandler {
         RestApiHttpRequestHandler.restApiHttpRequestHandlerInstance = this;
     }
 
-    get(uri, configInfo){
+    get(uri, configInfo, configKey){
         this.app.get(
             uri,
             async (req, res, next) => {
@@ -30,30 +32,40 @@ class RestApiHttpRequestHandler {
                     });
                 }
                 
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [GET]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.get,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrder
-                );
-            
-                // result = { code: ..., message: ...}
-                let result = await proxyWorker.doTask(req, res);  
-                if(!result || !result.code){
-                    result = {
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [GET]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.get,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                
+                    // result = { code: ..., message: ...}
+                    const result = await proxyWorker.doTask(req, res);  
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }                       
+                    
+                    if(result.code === 200){
+                        result.size = result.data.length;
+                    }                
+    //                        return result;
+                    return res.status(result.code).json(result);
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
-                }                       
-                
-                if(result.code === 200){
-                    result.size = result.data.length;
-                }                
-//                        return result;
-                return res.status(result.code).json(result);
+                    }
+                }
             }
         );
         this.app.get(
@@ -67,34 +79,45 @@ class RestApiHttpRequestHandler {
                         message: HTTP_RESPONSE['404']
                     });
                 }
-                
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [GET]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.get,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrde
-                );
-                
-                let result = await proxyWorker.doTask(req, res);
-                if(!result || !result.code){
-                    result = {
+
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
+
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [GET]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.get,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                    
+                    const result = await proxyWorker.doTask(req, res);
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }
+                    if(result.code === 200){
+                        result.size = result.data.length;
+                    }                                                                        
+    //                        return result;
+                    return res.status(result.code).json(result);
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
+                    }
                 }
-                if(result.code === 200){
-                    result.size = result.data.length;
-                }                                                                        
-//                        return result;
-                return res.status(result.code).json(result);
             }
         );
     }
 
-    post(uri, configInfo){
+    post(uri, configInfo, configKey){
         this.app.post(
             uri,
             async (req, res, next) => {
@@ -108,30 +131,41 @@ class RestApiHttpRequestHandler {
                     });
                 }
 
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [POST]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.post,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrder
-                );
-                
-                let result = await proxyWorker.doTask(req, res);
-                if(!result || !result.code){
-                    result = {
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
+
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [POST]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.post,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                    
+                    const result = await proxyWorker.doTask(req, res);
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }                                                        
+    //                        return result;
+                    return res.status(result.code).json(result);    
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
-                }                                                        
-//                        return result;
-                return res.status(result.code).json(result);    
+                    }
+                }
             }
         );
     }
 
-    put(uri, configInfo){
+    put(uri, configInfo, configKey){
         this.app.put(
             uri,
             async (req, res, next) => {
@@ -145,26 +179,37 @@ class RestApiHttpRequestHandler {
                     });
                 }
 
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [PUT]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.put,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrder
-                );
-                
-                let result = await proxyWorker.doTask(req, res);
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
 
-                if(!result || !result.code){
-                    result = {
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [PUT]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.put,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                    
+                    const result = await proxyWorker.doTask(req, res);
+
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }
+    
+                    return res.status(result.code).json(result);
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
-                }                                                        
-//                        return result;
-                return res.status(result.code).json(result);
+                    }
+                }
             }
         );
         this.app.put(
@@ -180,31 +225,42 @@ class RestApiHttpRequestHandler {
                     });
                 }
 
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [PUT]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.put,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrder
-                );
-                
-                let result = await proxyWorker.doTask(req, res);
-                
-                if(!result || !result.code){
-                    result = {
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
+
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [PUT]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.put,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                    
+                    const result = await proxyWorker.doTask(req, res);
+                    
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }
+
+                    return res.status(result.code).json(result);   
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
-                }                                                        
-//                        return result;
-                return res.status(result.code).json(result);         
+                    }
+                }      
             }
         );
     }
 
-    delete(uri, configInfo){
+    delete(uri, configInfo, configKey){
         this.app.delete(
             uri,
             async (req, res, next) => {
@@ -218,32 +274,43 @@ class RestApiHttpRequestHandler {
                     });
                 }
 
-                let apiResponser = new ApiResponser(configInfo);
-                let proxyWorker = new ProxyWorker(
-                    configInfo.data.auth === 'yes',
-                    configInfo.data.proxyList,
-                    `API Worker - [DELETE]${configInfo.data.uri}@${configInfo.data.id}(${_cip})`,
-                    apiResponser.delete,
-                    [true, apiResponser, req, res, next],
-                    configInfo.data.proxyOrder
-                );
-                
-                let result = await proxyWorker.doTask(req, res);
-                if(!result || !result.code){
-                    result = {
+                try{
+                    configInfo.updateConfigs();
+                    const configData = ApiConfigReader.instance.configInfo.get(configKey).getData();
+                    const apiResponser = new ApiResponser(configData);
+
+                    const proxyWorker = new ProxyWorker(
+                        configData.auth === 'yes',
+                        configData.proxyList,
+                        `API Worker - [DELETE]${configData.uri}@${configData.id}(${_cip})`,
+                        apiResponser.delete,
+                        [true, apiResponser, req, res, next],
+                        configData.proxyOrder
+                    );
+                    
+                    const result = await proxyWorker.doTask(req, res);
+                    if(!result || !result.code){
+                        result = {
+                            code: 500,
+                            message: HTTP_RESPONSE[500]
+                        };
+                    }                                                        
+
+                    return res.status(result.code).json(result);     
+                } catch (e) {
+                    console.error(e.stack || e);
+                    return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
-                    };
-                }                                                        
-
-                return res.status(result.code).json(result);          
+                    }
+                }     
             }
         );
     }
 
     /**
      * Set Router for RESTful API that manipulating Database
-     * @param {ApiConfigObject} configInfo from ApiConfigReader
+     * @param {Map(ApiConfigObject)} configInfo from ApiConfigReader
      */
     setRouter(configInfo){
         let URIs = configInfo.keys();
@@ -259,16 +326,16 @@ class RestApiHttpRequestHandler {
             const _configInfo = configInfo.get(uri);
            
             if(_configInfo.data.services.get) {
-                this.get(_uri, _configInfo);
+                this.get(_uri, _configInfo, uri);
             }
             if(_configInfo.data.services.post) {
-                this.post(_uri, _configInfo);
+                this.post(_uri, _configInfo, uri);
             }
             if(_configInfo.data.services.put) {
-                this.put(_uri, _configInfo);
+                this.put(_uri, _configInfo, uri);
             }
             if(_configInfo.data.services.delete) {
-                this.delete(_uri, _configInfo);
+                this.delete(_uri, _configInfo, uri);
             }
         }
     }
@@ -286,26 +353,36 @@ class FileTransferHttpRequestHandler {
         this.app.post(uri, async (req, res, next) => {
             const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-            let fileTransferResponser = new FileTransferResponser(configInfo);
-            let proxyWorker = new ProxyWorker(
-                configInfo.data.auth === 'yes',
-                ["start", "end"],
-                `File Transfer Worker - [GET]${configInfo.data.directory}@${configInfo.data.id}(${_cip})`,
-                fileTransferResponser.post,
-                [true, fileTransferResponser, req, res, next],
-                1
-            );
-            
-            let result = await proxyWorker.doTask(req, res);
+            try{
+                const fileTransferResponser = new FileTransferResponser(configInfo);
+                configInfo.updateConfigs();
+                const configData = FileTransferConfigReader.instance.configInfo.get(configKey).getData();
+                const proxyWorker = new ProxyWorker(
+                    configData.auth === 'yes',
+                    ["start", "end"],
+                    `File Transfer Worker - [GET]${configData.directory}@${configData.id}(${_cip})`,
+                    fileTransferResponser.post,
+                    [true, fileTransferResponser, req, res, next],
+                    1
+                );
+                
+                const result = await proxyWorker.doTask(req, res);
 
-            if(!result || !result.code){
-                result = {
+                if(!result || !result.code){
+                    result = {
+                        code: 500,
+                        message: HTTP_RESPONSE[500]
+                    };
+                }                       
+                
+                return res.status(result.code).json(result);         
+            } catch (e) {
+                console.error(e.stack || e);
+                return {
                     code: 500,
                     message: HTTP_RESPONSE[500]
-                };
-            }                       
-            
-            return res.status(result.code).json(result);         
+                }
+            }
         });
     }
 

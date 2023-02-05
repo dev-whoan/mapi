@@ -21,17 +21,26 @@ export default class ModelConfigReader{
 
     constructor(){
         if(ModelConfigReader.instance) return ModelConfigReader.instance;
-        this.readConfigs();
+        this.#readConfigs();
         ModelConfigReader.instance = this;
     }
+
+    updateConfigs(){
+        this.#readConfigs();
+    }
     
-    readConfigs(){
+    #readConfigs(){
         this.configInfo = new Map();
 
         configsInApi = fs.readdirSync(BASE_PATH).filter(file => path.extname(file) === '.json');
         configsInApi.forEach(file => {
             const fileData = fs.readFileSync(path.join(BASE_PATH, file));
+            const fileStat = fs.lstatSync(path.join(BASE_PATH, file));
             const jsonData = JSON.parse(fileData.toString());
+
+            const filePath = path.join(BASE_PATH, file);
+            const fileModified = fileStat ? fileStat.mtimeMs : null;
+
             this.checkValidity(jsonData);
             
             const oneObject = new ModelConfigObject(
@@ -41,6 +50,8 @@ export default class ModelConfigReader{
                 jsonData['proxy-list'],
                 jsonData['proxy-order'],
                 jsonData.log,
+                filePath,
+                fileModified,
                 jsonData.columns,
                 jsonData['ai-key']
             );
@@ -55,7 +66,11 @@ export default class ModelConfigReader{
     };
 
     printConfigs(){
-        console.log(this.configInfo);
+        console.log("=========Model Config Info=========");
+        this.configInfo.forEach((item, index) => {
+            console.log(item.data);
+        });
+        console.log("=========Model Config Info=========");
     };
 
     checkValidity(json){

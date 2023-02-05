@@ -29,17 +29,25 @@ export default class ApiConfigReader{
 
     constructor(){
         if(ApiConfigReader.instance) return ApiConfigReader.instance;
-        this.readConfigs();
+        this.#readConfigs();
         ApiConfigReader.instance = this;
     }
     
-    readConfigs(){
+    updateConfigs(){
+        this.#readConfigs();
+    }
+
+    #readConfigs(){
         this.configInfo = new Map();
 
         configsInApi = fs.readdirSync(BASE_PATH).filter(file => path.extname(file) === '.json');
         configsInApi.forEach(file => {
             const fileData = fs.readFileSync(path.join(BASE_PATH, file));
+            const fileStat = fs.lstatSync(path.join(BASE_PATH, file));
             const jsonData = JSON.parse(fileData.toString());
+
+            const filePath = path.join(BASE_PATH, file);
+            const fileModified = fileStat ? fileStat.mtimeMs : null;
             this.checkValidity(jsonData);
             
             const oneObject = new ApiConfigObject(
@@ -49,6 +57,8 @@ export default class ApiConfigReader{
                 jsonData['proxy-list'],
                 jsonData['proxy-order'],
                 jsonData.log,
+                filePath,
+                fileModified,
                 jsonData.uri,
                 jsonData.services,
                 jsonData['page-count'],
@@ -68,8 +78,6 @@ export default class ApiConfigReader{
             }
             
             this.configInfo.set(configId, oneObject);
-            
-            console.log(this.configInfo.get(configId));
         });
     };
 
@@ -77,8 +85,16 @@ export default class ApiConfigReader{
         return this.configInfo.get(key);
     };
 
+    getData(configId){
+        return 
+    }
+
     printConfigs(){
-        console.log(this.configInfo);
+        console.log("=========RESTful API Config Info=========");
+        this.configInfo.forEach((item, index) => {
+            console.log(item.data);
+        });
+        console.log("=========RESTful API Config Info=========");
     };
 
     modelCheck(){

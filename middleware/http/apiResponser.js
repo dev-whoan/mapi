@@ -1,23 +1,20 @@
 import HTTP_RESPONSE from '../../enum/httpResponse.js';
-import ModelConfigReader from '../../configReader/modelReader.js';
-import ApiDataHandler from '../db/apiDataHandler.js';
-import { objectKeysToArray } from '../../configReader/utils.js';
 import ConfigReader from '../../configReader/configReader.js';
 import API_TYPE from '../../enum/apiType.js';
 import DB_TYPE from '../../enum/dbType.js';
 import { SERVICE_TYPE, SERVICE_ID } from '../../enum/serviceType.js';
 import { URL } from 'url';
-import ServiceConfigReader from '../../configReader/serviceReader.js';
+import { create, read, update, _delete } from '../services/db/sqlExecutor.js';
 
 export default class ApiResponser{
-    constructor(apiConfigObject){
-        this.apiConfigObject = apiConfigObject;
-        this.apiId = this.apiConfigObject.data.uri + '@' + this.apiConfigObject.data.id;
-        this.originalUri = this.apiConfigObject.data.uri === '/'
-                    ? '/' + this.apiConfigObject.data.id
-                    : this.apiConfigObject.data.uri + '/' + this.apiConfigObject.data.id;
+    constructor(apiConfigDataObject){
+        this.apiConfigDataObject = apiConfigDataObject;
+        this.apiId = this.apiConfigDataObject.uri + '@' + this.apiConfigDataObject.id;
+        this.originalUri = this.apiConfigDataObject.uri === '/'
+                    ? '/' + this.apiConfigDataObject.id
+                    : this.apiConfigDataObject.uri + '/' + this.apiConfigDataObject.id;
         /*
-            apiConfigObject = (
+            apiConfigDataObject = (
                 jsonData.id,
                 jsonData.type,
                 jsonData.auth,
@@ -27,7 +24,6 @@ export default class ApiResponser{
                 jsonData.model,
                 jsonData.dml
             );
-            apiConfigObject.data.id
         */
     }
 
@@ -54,85 +50,12 @@ export default class ApiResponser{
     *  4. Return
     */
 
-    getConditionFromUri(uri){
-        let conditionUri = uri.split(this.originalUri)[1];
-        let _requestConditions = conditionUri.split('/');
-        _requestConditions.splice(0, 1);
-
-        if(_requestConditions.length === 1 && _requestConditions[0] === ''){
-            _requestConditions.splice(0, 1);
-        }
-
-        if(_requestConditions.length % 2 != 0){
-            console.error("[apiResponser-getApiData]: User sent incorrect request.");
-            console.error(`Condition must match follow rule: /key1/{value1}/key2/{value2}... but given condition is [${_requestConditions}]`)
-            return {
-                code: 400
-            };
-        }
-        let _condition = null;
-
-        if(_requestConditions.length !== 0){
-            _condition = {};
-
-            for(let i = 0; i < _requestConditions.length; i += 2){
-                _condition[_requestConditions[i]] = _requestConditions[i+1];
-            }
-        }
-
-        return _condition;
-    }
-
     getApiData(uri, query){
         console.log(`[RESTful API] Data Read request arrived(${uri}) `);
-
-        const serviceConfigReader = new ServiceConfigReader();
-        let apiDataHandler = new ApiDataHandler();
-        let modelConfigReader = new ModelConfigReader();
-
-        const service = this.apiConfigObject.data.services.get;
+        const service = this.apiConfigDataObject.services.get;
         
         if(service.type === SERVICE_TYPE.DB){
-            const serviceKey = `${SERVICE_ID.DB}@${service.id}`
-            const serviceData = serviceConfigReader.getConfig(serviceKey);
-            if(!serviceData){
-                console.error(`Cannot find service [${serviceKey}].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-
-            const serviceRawQuery = (serviceData.data.read) ? serviceData.data.read : null;
-            if(!serviceRawQuery){
-                console.error(`Cannot find service query [${serviceKey}.read].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-            const serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
-            const modelObject = modelConfigReader.getConfig(serviceRawQuery.model);
-            
-            const _condition = this.getConditionFromUri(uri);
-            
-            if(_condition && _condition.code && _condition.code === 400){
-                return {
-                    code: 400,
-                    message: HTTP_RESPONSE[400]
-                }
-            }
-
-            const queryOption = {
-                'pagination-key': this.apiConfigObject.data.pagingQuery,
-                'pagination-value': query[this.apiConfigObject.data.pagingQuery],
-                'pagination-column': modelObject.data.aiKey,
-                count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
-            };
-
-            console.log(`serviceQuery: `, serviceQuery);
-
-            return apiDataHandler.doSelect(serviceRawQuery.model, serviceQuery, _condition, queryOption);
+            return read(uri, query, this.originalUri, this.apiConfigDataObject, service);
         }
 
         return {
@@ -141,85 +64,12 @@ export default class ApiResponser{
         };
     }
 
-    async putApiData(uri, body, query){
-        console.log(`[RESTful API] Data Update request arrived(${uri}): `, body);
-        const serviceConfigReader = new ServiceConfigReader();
-        let apiDataHandler = new ApiDataHandler();
-        
-        const service = this.apiConfigObject.data.services.get;
+    putApiData(uri, body, query){
+        console.log(`[RESTful API] Data Update request arrived(${uri}): `, body);    
+        const service = this.apiConfigDataObject.services.put;
         
         if(service.type === SERVICE_TYPE.DB){
-            const getInfo = await this.getApiData(uri, query);
-            
-            if(getInfo.length === 0){
-                const result = await this.postApiData(uri, body);
-
-                return result;
-            }
-
-            const serviceKey = `${SERVICE_ID.DB}@${service.id}`
-            const serviceData = serviceConfigReader.getConfig(serviceKey);
-            if(!serviceData){
-                console.error(`Cannot find service [${serviceKey}].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-
-            const serviceRawQuery = (serviceData.data.update) ? serviceData.data.update : null;
-            if(!serviceRawQuery){
-                console.error(`Cannot find service query [${serviceKey}.read].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-            
-            let _serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
-            let _condition = this.getConditionFromUri(uri);
-            let _conditionKey = objectKeysToArray(_condition);
-
-            const preparedValues = [];
-
-            const bodyKeys = objectKeysToArray(body);
-            for(let _key in bodyKeys){
-                const key = bodyKeys[_key];
-                const substitutionString = `{{ body.${key} }}`;
-                if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[RESTful API]: Unknown field is given for creating data [ ${substitutionString} ].`);
-                    return {
-                        code: 400,
-                        message: HTTP_RESPONSE[400]
-                    };
-                }
-                _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                preparedValues.push(body[key]);
-            }
-
-            if(ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO){
-                const serviceQuery = _serviceQuery;
-                
-                return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, preparedValues, _condition);
-            }
-
-            for(let _key in _conditionKey){
-                const key = _conditionKey[_key];
-                const substitutionString = `{{ condition.${key} }}`;
-                if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[RESTful API]: Unknown field is given as a condition for creating data [ ${substitutionString} ].`);
-                    return {
-                        code: 400,
-                        message: HTTP_RESPONSE[400]
-                    };
-                }
-                _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                preparedValues.push(_condition[key]);
-            }
-
-            const serviceQuery = _serviceQuery;
-
-            return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, preparedValues);
+            return update(uri, query, body, this.originalUri, this.apiConfigDataObject, service);
         }
         
         return {
@@ -228,53 +78,12 @@ export default class ApiResponser{
         };
     }
 
-    postApiData(uri, body){
+    postApiData(uri, body, model){
         console.log(`[RESTful API] Data Create request arrived(${uri}): `, body);
-        const serviceConfigReader = new ServiceConfigReader();
-        let apiDataHandler = new ApiDataHandler();
+        const service = this.apiConfigDataObject.services.post;
 
-        const service = this.apiConfigObject.data.services.get;
-        
         if(service.type === SERVICE_TYPE.DB){
-            const serviceKey = `${SERVICE_ID.DB}@${service.id}`
-            const serviceData = serviceConfigReader.getConfig(serviceKey);
-            if(!serviceData){
-                console.error(`Cannot find service [${serviceKey}].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-
-            const serviceRawQuery = (serviceData.data.create) ? serviceData.data.create : null;
-            if(!serviceRawQuery){
-                console.error(`Cannot find service query [${serviceKey}.read].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-            const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
-            const bodyKeys = objectKeysToArray(body);
-            let _serviceQuery = serviceRawQueryWithModel;
-            const condition = [];
-            for(let _key in bodyKeys){
-                const key = bodyKeys[_key];
-                const substitutionString = `{{ body.${key} }}`;
-                if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[RESTful API]: Unknown field is given to create data [ ${substitutionString} ].`);
-                    return {
-                        code: 400,
-                        message: HTTP_RESPONSE[400]
-                    };
-                }
-                _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                condition.push(body[key]);
-            }
-
-            const serviceQuery = _serviceQuery;
-
-            return apiDataHandler.doInsert(serviceRawQuery.model, serviceQuery, condition);
+            return create(uri, body, service);
         }
 
         return {
@@ -285,53 +94,10 @@ export default class ApiResponser{
 
     deleteApiData(uri, body){
         console.log(`[RESTful API] Data Delete request arrived(${uri}): `, body);
-
-        const serviceConfigReader = new ServiceConfigReader();
-        let apiDataHandler = new ApiDataHandler();
-
-        const service = this.apiConfigObject.data.services.get;
+        const service = this.apiConfigDataObject.services.delete;
         
         if(service.type === SERVICE_TYPE.DB){
-            const serviceKey = `${SERVICE_ID.DB}@${service.id}`
-            const serviceData = serviceConfigReader.getConfig(serviceKey);
-            if(!serviceData){
-                console.error(`Cannot find service [${serviceKey}].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-
-            const serviceRawQuery = (serviceData.data.delete) ? serviceData.data.delete : null;
-            if(!serviceRawQuery){
-                console.error(`Cannot find service query [${serviceKey}.read].`);
-                return {
-                    code: 500,
-                    message: "Internal Server Error"
-                };
-            }
-            const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
-            
-            const bodyKeys = objectKeysToArray(body);
-            let _serviceQuery = serviceRawQueryWithModel;
-            
-            const condition = [];
-            for(let _key in bodyKeys){
-                const key = bodyKeys[_key];
-                const substitutionString = `{{ body.${key} }}`;
-                if(_serviceQuery.indexOf(substitutionString) === -1){
-                    console.warn(`[RESTful API]: Unknown field is given to delete data [ ${substitutionString} ].`);
-                    return {
-                        code: 400,
-                        message: HTTP_RESPONSE[400]
-                    };
-                }
-                _serviceQuery = _serviceQuery.replaceAll(substitutionString, '?');
-                condition.push(body[key]);
-            }
-            const serviceQuery = _serviceQuery;
-            
-            return apiDataHandler.doDelete(serviceRawQuery.model, serviceQuery, condition);
+            return _delete(uri, body, service);
         }
 
         return {
@@ -342,8 +108,19 @@ export default class ApiResponser{
 
     async get(proxied, apiResponser, req, res, next){
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
-        let result = await apiResponser.getApiData(_requestedUri, req.query);
+        const result = await apiResponser.getApiData(_requestedUri, req.query);
+        
+        if(result && result.code == 500){
+            return {
+                code: result.code,
+                message: HTTP_RESPONSE[result.code]
+            }   
+        }
+
         let _code = 200;
+        if(result.code){
+            _code = result.code;
+        }
         if(!result || result.length == 0){
             _code = 204;
         } else if(result && result.code == 400){
@@ -354,7 +131,7 @@ export default class ApiResponser{
         let nextUri = null, prevUri = null;
         
         if(result instanceof Array && result.length != 0){
-            const aiColumn = apiResponser.apiConfigObject.data.autoIncrementColumn;
+            const aiColumn = apiResponser.apiConfigDataObject.autoIncrementColumn;
             result.sort((a, b) => { 
                 return a[aiColumn] > b[aiColumn] ? 1 : -1  
             });
@@ -379,6 +156,14 @@ export default class ApiResponser{
     async post(proxied, apiResponser, req, res, next, model){
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
         const result = await apiResponser.postApiData(_requestedUri, req.body, model);
+
+        if(result && result.code == 500){
+            return {
+                code: result.code,
+                message: HTTP_RESPONSE[result.code]
+            }   
+        }
+
         let _code = 201;
 
         if(!result || result.length == 0){
@@ -410,6 +195,13 @@ export default class ApiResponser{
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
         const result = await apiResponser.putApiData(_requestedUri, req.body, req.query);
         
+        if(result && result.code == 500){
+            return {
+                code: result.code,
+                message: HTTP_RESPONSE[result.code]
+            }   
+        }
+
         let _code = result && result.code ? result.code : 200;
 
         if(!result || result.length == 0){
@@ -432,6 +224,13 @@ export default class ApiResponser{
     async delete(proxied, apiResponser, req, res, next){
         const _requestedUri = new URL(req.url, `http://${req.headers.host}`).pathname;
         const result = await apiResponser.deleteApiData(_requestedUri, req.body);
+
+        if(result && result.code == 500){
+            return {
+                code: result.code,
+                message: HTTP_RESPONSE[result.code]
+            }   
+        }
 
         return result;
     }

@@ -18,6 +18,7 @@ import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 /* Http Request Handler */
 import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler } from './middleware/http/index.js';
 import ServiceConfigReader from './configReader/serviceReader.js';
+import HTTP_RESPONSE from './enum/httpResponse.js';
 /* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +29,16 @@ app.set('host', process.env.HOST_NAME);
 app.set('json spaces', 4);
 
 app.use(bodyParser.json());
+app.use((err, req, res, next) => {
+    if (err) {
+        return res.status(400).json({
+            code: 400,
+            message: HTTP_RESPONSE[400]
+        });
+    }
+    
+    next();
+  })
 
 app.use(express.static(path.join(__dirname)));
 
@@ -104,19 +115,6 @@ if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig
     const apiConfigReader = new ApiConfigReader();
     apiConfigReader.printConfigs();
     baseConfigReader.setConfigReaders();
-
-    /*
-    let proxyWorker = new ProxyWorker(
-        false,
-        ["start", "end"],
-        `Rest API Model Check`,
-        apiConfigReader.modelCheck,
-        [],
-        1
-    );
-
-    await proxyWorker.doTask();
-    */
 
     const restApiHttpRequestHandler = new RestApiHttpRequestHandler(app);
     restApiHttpRequestHandler.setRouter(apiConfigReader.configInfo);

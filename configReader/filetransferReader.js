@@ -38,7 +38,12 @@ export default class FileTransferConfigReader{
         configsInApi = fs.readdirSync(BASE_PATH).filter(file => path.extname(file) === '.json');
         configsInApi.forEach(file => {
             const fileData = fs.readFileSync(path.join(BASE_PATH, file));
+            const fileStat = fs.lstatSync(path.join(BASE_PATH, file));
             const jsonData = JSON.parse(fileData.toString());
+
+            const filePath = path.join(BASE_PATH, file);
+            const fileModified = fileStat ? fileStat.mtimeMs : null;
+            
             this.checkValidity(jsonData);
             
             const oneObject = new FileTransferConfigObject(
@@ -46,6 +51,8 @@ export default class FileTransferConfigReader{
                 jsonData.type,
                 jsonData.auth,
                 jsonData.log,
+                filePath,
+                fileModified,
                 jsonData.directory,
                 jsonData.extension,
                 jsonData['custom-database'],
@@ -72,7 +79,11 @@ export default class FileTransferConfigReader{
     };
 
     printConfigs(){
-        console.log(this.configInfo);
+        console.log("=========File Transfer Config Info=========");
+        this.configInfo.forEach((item, index) => {
+            console.log(item.data);
+        });
+        console.log("=========File Transfer Config Info=========");
     };
 
     modelCheck(){

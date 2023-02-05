@@ -45,23 +45,30 @@ export default class ServiceConfigReader{
 
     constructor(){
         if(ServiceConfigReader.instance) return ServiceConfigReader.instance;
-        this.readConfigs();
+        this.#readConfigs();
         ServiceConfigReader.instance = this;
     }
 
-    readServiceConfigs(_path, prefix){
+    updateConfigs(){
+        this.#readConfigs();
+    }
+
+    #readServiceConfigs(_path, prefix){
         const configsInApi = fs.readdirSync(_path).filter(file => path.extname(file) === '.json');
         configsInApi.forEach(file => {
             const fileData = fs.readFileSync(path.join(_path, file));
-            const jsonData = JSON.parse(
-                                fileData.toString()
-                             );
+            const fileStat = fs.lstatSync(path.join(_path, file));
+            const jsonData = JSON.parse(fileData.toString());
+
+            const filePath = path.join(_path, file);
+            const fileModified = fileStat ? fileStat.mtimeMs : null;
             
             this.checkValidity(jsonData);
-            console.log('jsonDayta::', jsonData);
             const oneObject = new ServiceConfigObject(
                 jsonData.id,
                 jsonData.log,
+                filePath,
+                fileModified,
                 jsonData.create,
                 jsonData.read,
                 jsonData.update,
@@ -75,17 +82,16 @@ export default class ServiceConfigReader{
             }
             
             this.serviceConfigInfo.set(configId, oneObject);
-            console.log(this.serviceConfigInfo.get(configId));
         });
     }
     
-    readConfigs(){
+    #readConfigs(){
         this.serviceConfigInfo = new Map();
-        this.readServiceConfigs(
+        this.#readServiceConfigs(
             path.join(BASE_PATH, SERVICE_TYPE.DB),
             `${SERVICE_ID.DB}@`
         );
-        this.readServiceConfigs(
+        this.#readServiceConfigs(
             path.join(BASE_PATH, SERVICE_TYPE.FUNCTION),
             `${SERVICE_ID.FUNCTION}@`
         );
@@ -96,7 +102,11 @@ export default class ServiceConfigReader{
     };
 
     printConfigs(){
-        console.log(this.serviceConfigInfo);
+        console.log("=========Service Config Info=========");
+        this.serviceConfigInfo.forEach((item, index) => {
+            console.log(item.data);
+        });
+        console.log("=========Service Config Info=========");
     };
 
     modelCheck(){
