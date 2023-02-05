@@ -73,7 +73,6 @@ const getModelData = (model) => {
 
 const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
     const apiDataHandler = new ApiDataHandler();
-    const modelConfigReader = new ModelConfigReader();
     const serviceKey = `${SERVICE_ID.DB}@${service.id}`
     const serviceData = getServiceData(serviceKey);
     if(!serviceData){
@@ -119,6 +118,8 @@ const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
         count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
     };
 
+    console.log(`rawQuery: `, serviceRawQuery);
+    console.log(`condition: `, _condition);
     console.log(`serviceQuery: `, serviceQuery);
 
     return apiDataHandler.doSelect(serviceRawQuery.model, serviceQuery, _condition, queryOption);

@@ -3,7 +3,7 @@ import { MongoClient, Long, Double, ObjectID, ObjectId } from "mongodb";
 import ConfigReader from '../../../configReader/configReader.js';
 import NullOrUndefinedException from "../../../exception/nullOrUndefinedException.js";
 import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInsertExecuteException.js";
-import { objectKeysToArray } from "../../../configReader/utils.js";
+import { objectKeysToArray, objectValuesToArray } from "../../../configReader/utils.js";
 import ModelConfigReader from "../../../configReader/modelReader.js";
 import HTTP_RESPONSE from "../../../enum/httpResponse.js";
 
@@ -77,18 +77,55 @@ export default class MongoAccessor {
 
     async select(collection, _query, condition, queryOption){
         const query = condition ? condition : {};
+        
         try{
             const _collection = this.client.db(dbInfo.scheme).collection(collection);
-            
             const options = {};
+
+            const specialNumber = {};
+            const modelColumns = ModelConfigReader.instance.configInfo.get(collection).data.columns;
+            const objectFields = objectKeysToArray(modelColumns);
+            
+            for(let i = 0; i < objectFields.length; i++){
+                let oneKey = objectFields[i];
+                let oneValue = modelColumns[oneKey];
+                
+                if(oneValue.toLowerCase() === 'long' || oneValue.toLowerCase() === 'double'){
+                    specialNumber[oneKey] = oneValue;
+                }
+            }
+
+            const fieldList = objectKeysToArray(query);
+            const valueList = objectValuesToArray(query);
+            for(let i = 0; i < fieldList.length; i++){
+                let sn = specialNumber[fieldList[i]];
+                let value = valueList[i];
+                if(sn){
+                    if(sn === 'integer'){
+                        console.log("value is integer");
+                        value = parseInt(value);
+                    } else if(sn === 'long'){
+                        console.log("value is long");
+                        value = new Long(value);
+                    } else if(sn === 'float'){
+                        console.log("value is float");
+                        value = parseFloat(value);
+                    } else if(sn === 'double'){
+                        console.log("value is double");
+                        value = new Double(value);
+                    }
+                }
+                query[fieldList[i]] = value;
+            }
+            
             const count = await _collection.countDocuments(query, options);
             
             if(count === 0){
                 return [];
             }
-    
+
             const _skipIndex = queryOption['pagination-value'] >= 1 ? queryOption['pagination-value']-1 : 0;
-            const cursor = await _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
+            const cursor = _collection.find(query, options).skip(_skipIndex * queryOption.count).limit(queryOption.count);
             let result = [];
             
             await cursor.forEach((item, index) => {
