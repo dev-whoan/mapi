@@ -395,9 +395,6 @@ class FileTransferHttpRequestHandler {
         let baseUri = (baseConfig[API_TYPE.FILE_TRANSFER])['read-uri'];
         baseUri = (baseUri === '/' ? '' : baseUri);
         baseUri += `/${configInfo.data.id}`;
-
-        console.log(baseUri);
-        console.log(configInfo);
     }
 
     setRouter(configInfo){

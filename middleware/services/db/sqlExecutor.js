@@ -9,7 +9,6 @@ import { SERVICE_ID } from "../../../enum/serviceType.js";
 import ApiDataHandler from "../../db/apiDataHandler.js";
 
 const getConditionFromUri = (uri, originalUri) => {
-    console.log(uri, originalUri);
     let conditionUri = uri.split(originalUri)[1];
     let _requestConditions = conditionUri.split('/');
     _requestConditions.splice(0, 1);
@@ -118,15 +117,10 @@ const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
         count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
     };
 
-    console.log(`rawQuery: `, serviceRawQuery);
-    console.log(`condition: `, _condition);
-    console.log(`serviceQuery: `, serviceQuery);
-
     return apiDataHandler.doSelect(serviceRawQuery.model, serviceQuery, _condition, queryOption);
 };
 
 const create = async (uri, body, service) => {
-    console.log("Create service id: ", service.id);
     const apiDataHandler = new ApiDataHandler();
     const serviceKey = `${SERVICE_ID.DB}@${service.id}`
     const serviceData = getServiceData(serviceKey);
@@ -138,8 +132,6 @@ const create = async (uri, body, service) => {
             message: "Internal Server Error"
         };
     }
-
-    console.log('Check me -> ', serviceData);
 
     const serviceRawQuery = (serviceData.create) ? serviceData.create : null;
     
@@ -158,8 +150,6 @@ const create = async (uri, body, service) => {
             message: HTTP_RESPONSE[500]
         }
     }
-
-    console.log("Check me -> ", modelData);
 
     const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', modelData.id);
     
