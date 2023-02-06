@@ -50,12 +50,20 @@ export default class ApiResponser{
     *  4. Return
     */
 
-    getApiData(uri, query){
+    async getApiData(uri, query){
         console.log(`[RESTful API] Data Read request arrived(${uri}) `);
         const service = this.apiConfigDataObject.services.get;
         
         if(service.type === SERVICE_TYPE.DB){
-            return read(uri, query, this.originalUri, this.apiConfigDataObject, service);
+            const result = await read(uri, query, this.originalUri, this.apiConfigDataObject, service).catch((err) => {
+                console.error(err.stack || err);
+                return {
+                    code: 500,
+                    message: HTTP_RESPONSE[500]
+                };
+            });
+
+            return result;
         }
 
         return {
@@ -64,12 +72,20 @@ export default class ApiResponser{
         };
     }
 
-    putApiData(uri, body, query){
+    async putApiData(uri, body, query){
         console.log(`[RESTful API] Data Update request arrived(${uri}): `, body);    
         const service = this.apiConfigDataObject.services.put;
         
         if(service.type === SERVICE_TYPE.DB){
-            return update(uri, query, body, this.originalUri, this.apiConfigDataObject, service);
+            const result = await update(uri, query, body, this.originalUri, this.apiConfigDataObject, service).catch((err) => {
+                console.error(err.stack || err);
+                return {
+                    code: 500,
+                    message: HTTP_RESPONSE[500]
+                };
+            });
+
+            return result;
         }
         
         return {
@@ -78,12 +94,20 @@ export default class ApiResponser{
         };
     }
 
-    postApiData(uri, body, model){
+    async postApiData(uri, body, model){
         console.log(`[RESTful API] Data Create request arrived(${uri}): `, body);
         const service = this.apiConfigDataObject.services.post;
 
         if(service.type === SERVICE_TYPE.DB){
-            return create(uri, body, service);
+            const result = await create(uri, body, service).catch((err) => {
+                console.error(err.stack || err);
+                return {
+                    code: 500,
+                    message: HTTP_RESPONSE[500]
+                };
+            });
+
+            return result;
         }
 
         return {
@@ -92,12 +116,20 @@ export default class ApiResponser{
         };
     }
 
-    deleteApiData(uri, body){
+    async deleteApiData(uri, body){
         console.log(`[RESTful API] Data Delete request arrived(${uri}): `, body);
         const service = this.apiConfigDataObject.services.delete;
         
         if(service.type === SERVICE_TYPE.DB){
-            return _delete(uri, body, service);
+            const result = await _delete(uri, body, service).catch((err) => {
+                console.error(err.stack || err);
+                return {
+                    code: 500,
+                    message: HTTP_RESPONSE[500]
+                };
+            });
+            
+            return result;
         }
 
         return {
