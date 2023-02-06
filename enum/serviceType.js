@@ -8,4 +8,11 @@ const SERVICE_ID = {
     FUNCTION: 'service-func'
 };
 
-export { SERVICE_TYPE, SERVICE_ID };
+const SERVICE_CRUD_TYPE = {
+    READ: 'read',
+    CREATE: 'create',
+    UPDATE: 'update',
+    DELETE: 'delete'
+}
+
+export { SERVICE_TYPE, SERVICE_ID, SERVICE_CRUD_TYPE};
