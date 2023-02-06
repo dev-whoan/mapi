@@ -118,10 +118,6 @@ const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
         count: ConfigReader.instance.getConfig()[API_TYPE.REST].count,
     };
 
-    console.log(`rawQuery: `, serviceRawQuery);
-    console.log(`condition: `, _condition);
-    console.log(`serviceQuery: `, serviceQuery);
-
     return apiDataHandler.doSelect(serviceRawQuery.model, serviceQuery, _condition, queryOption);
 };
 
@@ -225,6 +221,13 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
 
     let _serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
     let _condition = getConditionFromUri(uri, originalUri);
+    if(!_condition){
+        console.error(`Cannot find condition from request uri [${uri}]`);
+        return {
+            code: 400,
+            message: HTTP_RESPONSE[400]
+        };
+    }
     let _conditionKey = objectKeysToArray(_condition);
 
     const preparedValues = [];
