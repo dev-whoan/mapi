@@ -96,6 +96,7 @@ export default class MariaDBAccessor{
         let cond = (condition ? '' : null);
         let paginationOffset = null;
         
+        
         let i = 0;
         if(condition){
             const _leng = Object.keys(condition).length;
@@ -141,6 +142,8 @@ export default class MariaDBAccessor{
         } finally {
             conn.close();
             conn.end();
+            console.log("결과");
+            console.log(result);
             return result;
         }
     }
@@ -175,6 +178,8 @@ export default class MariaDBAccessor{
 
         let result = null;
 
+     
+        
         try{
             result = await conn.query(query, dataList);
             result.mariadb = true;

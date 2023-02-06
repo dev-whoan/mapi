@@ -53,6 +53,14 @@ export default class ApiDataHandler{
 
                     return _result;
                 }
+                if(result.firestore)
+                {
+                    _result={
+                        '_next_id':result.insertId,
+                        'inserted':true
+                    }
+                    return _result;
+                }
             }
 
             if(result.code === 400){

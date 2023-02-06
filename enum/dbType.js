@@ -1,7 +1,8 @@
 const DB_TYPE = {
     MARIADB: 'mariadb',
     MONGO: 'mongo',
-    FIREBASE: 'firebase'
+    FIREBASE: 'firebase',
+    FIRESTORE: 'firestore'
 };
 
 export default DB_TYPE;

@@ -12,7 +12,7 @@ const getConditionFromUri = (uri, originalUri) => {
     let conditionUri = uri.split(originalUri)[1];
     let _requestConditions = conditionUri.split('/');
     _requestConditions.splice(0, 1);
-
+ 
     if(_requestConditions.length === 1 && _requestConditions[0] === ''){
         _requestConditions.splice(0, 1);
     }
@@ -178,7 +178,6 @@ const create = async (uri, body, service) => {
 const update = async (uri, query, body, originalUri, apiConfigDataObject, service) => {
     const apiDataHandler = new ApiDataHandler();
     const getInfo = await read(uri, query, originalUri, apiConfigDataObject, service);
-
     if (getInfo.length === 0) {
         const result = await create(uri, body, service);
 
@@ -234,7 +233,7 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
         preparedValues.push(body[key]);
     }
 
-    if (ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO) {
+    if (ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO||ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.FIRESTORE) {
         const serviceQuery = _serviceQuery;
 
         return apiDataHandler.doModify(serviceRawQuery.model, serviceQuery, preparedValues, _condition);
