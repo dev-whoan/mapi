@@ -1,5 +1,5 @@
 const HTTP_RESPONSE = {
-    200: "HTTP Ok",
+    200: "HTTP OK",
     201: "Created",
     204: "No Content(No data)",
     400: "Bad Request",

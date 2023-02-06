@@ -87,10 +87,10 @@ const docsRenderer = (res, req, next, config) => {
             const serviceData = getServiceData(serviceKey);
             const modelData = getModelData(serviceData[service.service].model);
             const modelColumns = objectKeysToArray(modelData.columns);
-            const paramLabel = service.service === SERVICE_CRUD_TYPE.READ ? `URI Segment` : `Body Parameter`;
+            const paramLabel = service.service === SERVICE_CRUD_TYPE.READ ? `URI Parameter` : `Body Parameter`;
             svc_body += "<div class='one-service'>"
                 + "<div class='one-service-metadata'>"
-
+˙
                     + `<p class='one-service-method'>${API_METHOD[service.service]}</p>`
                     + '{{ API_AUTH }} '
                     + `<p class='one-service-type'>${service.type}</p>`
