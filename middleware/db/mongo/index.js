@@ -102,16 +102,12 @@ export default class MongoAccessor {
                 let value = valueList[i];
                 if(sn){
                     if(sn === 'integer'){
-                        console.log("value is integer");
                         value = parseInt(value);
                     } else if(sn === 'long'){
-                        console.log("value is long");
                         value = new Long(value);
                     } else if(sn === 'float'){
-                        console.log("value is float");
                         value = parseFloat(value);
                     } else if(sn === 'double'){
-                        console.log("value is double");
                         value = new Double(value);
                     }
                 }
@@ -286,16 +282,12 @@ export default class MongoAccessor {
                 let value = valueList[i];
                 if(sn){
                     if(sn === 'integer'){
-                        console.log("value is integer");
                         value = parseInt(value);
                     } else if(sn === 'long'){
-                        console.log("value is long");
                         value = new Long(value);
                     } else if(sn === 'float'){
-                        console.log("value is float");
                         value = parseFloat(value);
                     } else if(sn === 'double'){
-                        console.log("value is double");
                         value = new Double(value);
                     }
                 }

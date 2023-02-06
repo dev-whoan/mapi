@@ -9,7 +9,6 @@ import { SERVICE_ID } from "../../../enum/serviceType.js";
 import ApiDataHandler from "../../db/apiDataHandler.js";
 
 const getConditionFromUri = (uri, originalUri) => {
-    console.log(uri, originalUri);
     let conditionUri = uri.split(originalUri)[1];
     let _requestConditions = conditionUri.split('/');
     _requestConditions.splice(0, 1);
