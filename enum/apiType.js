@@ -5,7 +5,8 @@ const API_TYPE = {
     DB: "database",
     FILE_TRANSFER: "file-transfer",
     JWT: "jwt",
-    MODEL: "model"
+    MODEL: "model",
+    DOCS: "docs"
 };
 
 export default API_TYPE;

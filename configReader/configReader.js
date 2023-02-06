@@ -13,7 +13,7 @@ import apiType from '../enum/apiType.js';
 
 
 const controlList = [
-    "cors", "restapi", "database", "jwt", "file-transfer"
+    "cors", "restapi", "database", "jwt", "file-transfer", "docs"
 ]
 
 const properties = [
@@ -46,6 +46,10 @@ const properties = [
         'base-directory',
         'table',
         'columns'
+    ],
+    [
+        'use',
+        'docs-uri'
     ]
 ]
 

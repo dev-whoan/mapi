@@ -1,0 +1,195 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
+<title>MAPI RESTful API Document</title>
+<style>
+body {
+	background-color: #ededed;
+	padding: 10px;
+}
+
+section#body-wrapper{
+	margin-left: 200px;
+	padding: 20px;
+	background-color: white;
+}
+
+section#body-wrapper hr {
+	margin-top: 20px;
+	margin-bottom: 10px;
+}
+
+header {
+	height: 100px;
+}
+
+header h1 {
+	height: 45px;
+	font-size: 26px;
+	font-weight: 700;
+}
+
+header h2 {
+	height: 30px;
+	font-size: 22px;
+	font-weight: 700;
+}
+
+#support-wrapper{
+	height: auto;
+	overflow: hidden;
+	position: relative;
+}
+
+#support-wrapper .one-service{
+	width: 100%;
+	margin: 20px auto;
+	height: auto;
+	overflow: hidden;
+	position: relative;
+}
+
+#support-wrapper .one-service .one-service-metadata{
+	width: 100%;
+	height: 30px;
+	line-height: 30px;
+	display: flex;
+}
+
+#support-wrapper .one-service .one-service-metadata p{
+	width: 70px;
+	height: 30px;
+	line-height: 30px;
+	text-align: center;
+	border-radius: 5px;
+	
+	font-weight: 700;
+	font-size: 14px;
+	color: white;
+}
+
+#support-wrapper .one-service .one-service-metadata .one-service-method {
+	background-color: green;
+	
+}
+
+#support-wrapper .one-service .one-service-metadata .one-service-auth-require {
+	margin-left: 5px;
+	background-color: #ff4c4c;
+}
+
+#support-wrapper .one-service .one-service-metadata .one-service-type {
+	margin-left: 5px;
+	background-color: #6e72ff;
+}
+
+#support-wrapper .one-service .one-service-metadata .one-service-id {
+	width: auto !important;
+	margin-left: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
+	background-color: #ccc;
+}
+
+#support-wrapper .one-service .one-service-metadata .one-service-crud {
+	margin-left: 5px;
+	background-color: #ff43b4;
+}
+
+#support-wrapper .one-service .one-service-request-wrapper {
+	margin-top: 10px;
+	
+	width: 100%;
+	height: auto;
+	overflow: hidden;
+	position: relative;
+}
+
+#support-wrapper .one-service .one-service-request-wrapper .one-service-request-uri {
+	background-color: #4a4a4a;
+	height: 50px;
+	line-height: 50px;
+	color: #a9a4ff;
+	font-weight: 700;
+	width: calc(100% - 40px);
+	padding: 0 20px 0 20px;
+}
+
+#support-wrapper .one-service .one-service-request-wrapper .one-service-request-uri span {
+	color: #e9e9e9;
+	font-weight: 400;
+}
+
+#support-wrapper .one-service .one-service-request-wrapper .one-service-table-label {
+	font-size: 20px;
+	font-weight: 700;
+	margin-top: 20px;
+}
+
+#support-wrapper .one-service .one-service-request-wrapper .table-wrapper{
+	width: 100%;
+	height: auto;
+	overflow: hidden;
+	position: relative;
+}
+
+.table-wrapper .one-service-table{
+	width: 100%;
+	border: 1px solid #ccc;
+	
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.table-wrapper .one-service-table th{
+	height: 30px;
+	line-height: 30px;
+	text-align: start;
+	
+	border-bottom: 1px solid #ccc;
+	border-right: 1px solid #ccc;
+}
+
+.table-wrapper .one-service-table .table-header{
+	font-weight: 700;
+}
+
+.table-wrapper .one-service-table .table-column-field{
+	width: 50%;
+	padding-left: 10px;
+}
+
+.table-wrapper .one-service-table .table-column-type{
+	width: 50%;
+	padding-left: 10px;
+}
+
+.table-body .green {
+	color: green;
+}
+
+.table-body .red {
+	color: red;
+}
+</style>
+</head>
+<body>
+
+<section id="body-wrapper">
+
+<header>
+	<h1>MAPI RESTful API Document</h1>
+	<h2>{{ API_ID }}</h2>
+	<h3>{{ API_PATH }}</h2>
+	<h3>{{ API_MODIFIED }}</h2>
+</header>
+<hr />
+<section id="support-wrapper">
+{{ SVC_BODY }}
+</section>
+
+</section>
+</body>
+</html>

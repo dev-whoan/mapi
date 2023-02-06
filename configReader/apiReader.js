@@ -7,12 +7,9 @@ import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ApiConfigObject from '../data/object/apiConfigObject.js';
 import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
-import DBAccessor from '../middleware/db/accessor.js';
-import { stringToBase64 } from './utils.js';
-import AutoIncrementUndefinedException from '../exception/autoIncrementUndefinedException.js';
-import MariaDBAccessor from '../middleware/db/mariadb/index.js';
-import MongoAccessor from '../middleware/db/mongo/index.js';
-import FirebaseAccessor from '../middleware/db/firebase/index.js';
+import { DocsRequestHandler } from '../middleware/http/index.js';
+import ConfigReader from './configReader.js';
+import API_TYPE from '../enum/apiType.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,12 +26,19 @@ export default class ApiConfigReader{
 
     constructor(){
         if(ApiConfigReader.instance) return ApiConfigReader.instance;
-        this.#readConfigs();
+        this.updateConfigs();
         ApiConfigReader.instance = this;
     }
     
     updateConfigs(){
         this.#readConfigs();
+
+        /* Rest Api Docs */
+        if(ConfigReader.instance.getConfig()[API_TYPE.DOCS].use && ConfigReader.instance.getConfig()[API_TYPE.DOCS].use === 'yes'){
+            const docsRequestHandler = new DocsRequestHandler();
+            docsRequestHandler.setRouter(this.configInfo);
+        }
+        /* Rest Api Docs */
     }
 
     #readConfigs(){

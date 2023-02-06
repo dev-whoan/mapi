@@ -10,6 +10,7 @@ import FileTransferResponser from "./fileTransferResponser.js";
 import ApiConfigObject from "../../data/object/apiConfigObject.js";
 import ApiConfigReader from "../../configReader/apiReader.js";
 import FileTransferConfigReader from "../../configReader/filetransferReader.js";
+import { docsRenderer } from './docs/docs.js';
 
 class RestApiHttpRequestHandler {
     static instance;
@@ -516,6 +517,46 @@ class JsonWebTokenHttpRequestHandler {
     }
 }
 
+class DocsRequestHandler {
+    static instance;
+    constructor(app){
+        if(DocsRequestHandler.instance)  return DocsRequestHandler.instance;
+        this.app = app;
+        DocsRequestHandler.instance = this;
+    }
+
+    get(uri, configInfo){
+        console.log("Docs Added: ", uri);
+        this.app.get(
+            uri, (req, res, next) => {
+                /* response will be sent in docRenderer Function */
+                const result = docsRenderer(res, req, next, configInfo);
+                /* response will be sent in docRenderer Function */
+                // return res.status(result.code).json(result);
+            }
+        );
+    }
+
+    setRouter(configInfo){
+        const URIs = configInfo.keys();
+        let uri;
+        const baseConfig = ConfigReader.instance.getConfig();
+        let baseUri = (baseConfig[API_TYPE.DOCS])['docs-uri'];
+        baseUri = (baseUri === '/' ? '' : baseUri);
+        while( (uri = URIs.next().value) ){
+            const rawUri = uri.toString().split('@');
+            const _uri = (rawUri[0] !== '/')
+                 ? baseUri + rawUri[0] + '/' + rawUri[1]
+                 : baseUri + rawUri[0] + rawUri[1];
+            const _configInfo = configInfo.get(uri);
+            console.log("*******Docs Setting Router")
+            this.get(_uri, _configInfo);
+            console.log("*******Docs Setting Router")
+        }
+    }
+}
+
 export {
-    RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler
+    RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler,
+    DocsRequestHandler
 }
