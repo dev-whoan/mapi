@@ -215,6 +215,13 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
 
     let _serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
     let _condition = getConditionFromUri(uri, originalUri);
+    if(!_condition){
+        console.error(`Cannot find condition from request uri [${uri}]`);
+        return {
+            code: 400,
+            message: HTTP_RESPONSE[400]
+        };
+    }
     let _conditionKey = objectKeysToArray(_condition);
 
     const preparedValues = [];

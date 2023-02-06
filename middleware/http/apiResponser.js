@@ -145,10 +145,10 @@ export default class ApiResponser{
             'prev-uri': null
         };
         
-        if(ConfigReader.instance.getConfig()[API_TYPE.DB].type === DB_TYPE.MONGO){
-            msg['next-uri'] = 'Not Supported (MongoDB) Yet';
-            msg['prev-uri'] = 'Not Supported (MongoDB) Yet';
-        }
+//        if(ConfigReader.instance.getConfig()[API_TYPE.DB].type === DB_TYPE.MONGO){
+        msg['next-uri'] = 'Not Supported Yet';
+        msg['prev-uri'] = 'Not Supported Yet';
+//        }
 
         return msg;
     }
