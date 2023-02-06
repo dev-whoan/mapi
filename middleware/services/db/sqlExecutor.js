@@ -122,7 +122,6 @@ const read = async (uri, query, originalUri, apiConfigDataObject, service) => {
 };
 
 const create = async (uri, body, service) => {
-    console.log("Create service id: ", service.id);
     const apiDataHandler = new ApiDataHandler();
     const serviceKey = `${SERVICE_ID.DB}@${service.id}`
     const serviceData = getServiceData(serviceKey);
@@ -134,8 +133,6 @@ const create = async (uri, body, service) => {
             message: "Internal Server Error"
         };
     }
-
-    console.log('Check me -> ', serviceData);
 
     const serviceRawQuery = (serviceData.create) ? serviceData.create : null;
     
@@ -154,8 +151,6 @@ const create = async (uri, body, service) => {
             message: HTTP_RESPONSE[500]
         }
     }
-
-    console.log("Check me -> ", modelData);
 
     const serviceRawQueryWithModel = serviceRawQuery.query.replaceAll('{{ model }}', modelData.id);
     

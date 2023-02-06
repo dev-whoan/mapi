@@ -12,11 +12,11 @@ import ApiConfigReader from "../../configReader/apiReader.js";
 import FileTransferConfigReader from "../../configReader/filetransferReader.js";
 
 class RestApiHttpRequestHandler {
-    static restApiHttpRequestHandlerInstance;
+    static instance;
     constructor(app){
-        if(RestApiHttpRequestHandler.instance)  return RestApiHttpRequestHandler.restApiHttpRequestHandlerInstance;
+        if(RestApiHttpRequestHandler.instance)  return RestApiHttpRequestHandler.instance;
         this.app = app;
-        RestApiHttpRequestHandler.restApiHttpRequestHandlerInstance = this;
+        RestApiHttpRequestHandler.instance = this;
     }
 
     get(uri, configInfo, configKey){
