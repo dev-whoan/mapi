@@ -6,13 +6,14 @@ import { objectValuesToArray } from '../../../configReader/utils.js';
 import PROCESS_EXIT_CODE from '../../../enum/processExitCode.js';
 import NullOrUndefinedException from '../../../exception/nullOrUndefinedException.js';
 import AutoIncrementUndefinedException from '../../../exception/autoIncrementUndefinedException.js';
+import Logger from '../../../logger/index.js';
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
 
 export default class MariaDBAccessor{
     constructor(){
-
+        this.logger = new Logger('info', 'MariaDBAccessor.js');
     }
 
     async initTest(){
@@ -21,17 +22,17 @@ export default class MariaDBAccessor{
         try{
             conn = await pool.getConnection();
             const result = await conn.query("SELECT 1");
-            console.log("MariaDB Initialize Test Passed !");
+            this.logger.info("MariaDB Initialize Test Passed !");
         } catch (e) {
-            console.log(`Fail to connect database:: [${dbInfo.user}]@${dbInfo.host}:${dbInfo.port}`);
-            console.log(e.message);
+            this.logger.error(`Fail to connect database:: [${dbInfo.user}]@${dbInfo.host}:${dbInfo.port}`);
+            this.logger.error(e.message);
             if(e.message.toString().includes("retrieve connection from pool timeout after")){
-                console.error("Fail to connect to the Database. Please check [/app/configs/controller/default.json]");
+                this.logger.error("Fail to connect to the Database. Please check [/app/configs/controller/default.json]");
                 return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
             }
 
             if(e.message.toString().includes("Access denied")){
-                console.error("Fail to connect to the Database. (Access Denied)");
+                this.logger.error("Fail to connect to the Database. (Access Denied)");
                 return PROCESS_EXIT_CODE.DB_ACCESS_DENIED;
             }
         } finally {
@@ -78,8 +79,8 @@ export default class MariaDBAccessor{
         try{
             result = await conn.query(`SELECT ${_columns} FROM ${table} WHERE ${cond}`, _value);
         } catch (sqlError) {
-            console.error(`[MariaDB]: Fail to select data.`);
-            console.error(sqlError.stack || sqlError);
+            this.logger.error(`[MariaDB]: Fail to select data.`);
+            this.logger.error(sqlError.stack || sqlError);
             result = {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -131,9 +132,9 @@ export default class MariaDBAccessor{
             else
                 result = await conn.query(__query);
         } catch (sqlError) {
-            console.error(`[MariaDB]: Fail to select data.`);
-            console.error(`Query: `, __query);
-            console.error(sqlError.stack || sqlError);
+            this.logger.error(`[MariaDB]: Fail to select data.`);
+            this.logger.error(`Query: `, __query);
+            this.logger.error(sqlError.stack || sqlError);
             result = {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -153,9 +154,9 @@ export default class MariaDBAccessor{
         try{
             result = await conn.query(query, values);
         } catch (sqlError) {
-            console.error(`[MariaDB]: Fail to update data.`);
-            console.error(`Query: `, query);
-            console.error(sqlError.stack || sqlError);
+            this.logger.error(`[MariaDB]: Fail to update data.`);
+            this.logger.error(`Query: `, query);
+            this.logger.error(sqlError.stack || sqlError);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -180,16 +181,16 @@ export default class MariaDBAccessor{
             result.mariadb = true;
         } catch (e) {
             if(e.message.toString().includes('Duplicate entry')){
-                console.warn("[MariaDB]: Data duplicated: ", query, dataList);
+                this.logger.warn("[MariaDB]: Data duplicated: ", query, dataList);
                 return {
                     code: 200,
                     message: HTTP_RESPONSE[200]
                 };
             }
             
-            console.error(`[MariaDB]: Fail to insert data.`);
-            console.error(`Query: `, query, dataList);
-            console.error(e.stack || e);
+            this.logger.error(`[MariaDB]: Fail to insert data.`);
+            this.logger.error(`Query: `, query, dataList);
+            this.logger.error(e.stack || e);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -209,9 +210,9 @@ export default class MariaDBAccessor{
         try{
             result = await conn.query(query, condition);
         } catch (sqlError) {
-            console.error(`[MariaDB]: Fail to delete data.`);
-            console.error(`Query: `, query, condition);
-            console.error(e.stack || e);
+            this.logger.error(`[MariaDB]: Fail to delete data.`);
+            this.logger.error(`Query: `, query, condition);
+            this.logger.error(e.stack || e);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]

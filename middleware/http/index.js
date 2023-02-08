@@ -10,12 +10,15 @@ import FileTransferResponser from "./fileTransferResponser.js";
 import ApiConfigObject from "../../data/object/apiConfigObject.js";
 import ApiConfigReader from "../../configReader/apiReader.js";
 import FileTransferConfigReader from "../../configReader/filetransferReader.js";
+import { docsRenderer } from './docs/docs.js';
+import Logger from "../../logger/index.js";
 
 class RestApiHttpRequestHandler {
     static instance;
     constructor(app){
         if(RestApiHttpRequestHandler.instance)  return RestApiHttpRequestHandler.instance;
         this.app = app;
+        this.logger = new Logger('info', 'RestApiHttpRequestHandler.js');
         RestApiHttpRequestHandler.instance = this;
     }
 
@@ -25,7 +28,7 @@ class RestApiHttpRequestHandler {
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -60,7 +63,7 @@ class RestApiHttpRequestHandler {
     //                        return result;
                     return res.status(result.code).json(result);
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -73,7 +76,7 @@ class RestApiHttpRequestHandler {
             async (req, res, next) => {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 if(!req.originalUrl.includes(uri)){
-                    console.log(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [GET] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -107,7 +110,7 @@ class RestApiHttpRequestHandler {
     //                        return result;
                     return res.status(result.code).json(result);
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -124,7 +127,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                 
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [POST] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -155,7 +158,7 @@ class RestApiHttpRequestHandler {
     //                        return result;
                     return res.status(result.code).json(result);    
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -172,7 +175,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -204,7 +207,7 @@ class RestApiHttpRequestHandler {
     
                     return res.status(result.code).json(result);
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -218,7 +221,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(!req.originalUrl.includes(uri)){
-                    console.log(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [PUT] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -250,7 +253,7 @@ class RestApiHttpRequestHandler {
 
                     return res.status(result.code).json(result);   
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -267,7 +270,7 @@ class RestApiHttpRequestHandler {
                 const _cip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 if(uri !== req.originalUrl){
-                    console.log(`API Worker - [DELETE] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
+                    this.logger.info(`API Worker - [DELETE] Unknown Page Requested:: ${req.originalUrl}(${_cip})`);
                     return res.status(404).json({
                         code: 404,
                         message: HTTP_RESPONSE['404']
@@ -298,7 +301,7 @@ class RestApiHttpRequestHandler {
 
                     return res.status(result.code).json(result);     
                 } catch (e) {
-                    console.error(e.stack || e);
+                    this.logger.error(e.stack || e);
                     return {
                         code: 500,
                         message: HTTP_RESPONSE[500]
@@ -346,6 +349,7 @@ class FileTransferHttpRequestHandler {
     constructor(app){
         if(FileTransferHttpRequestHandler.instance)  return FileTransferHttpRequestHandler.fileTransferHttpRequestHandlerInstance;
         this.app = app;
+        this.logger = new Logger('info', 'FileTransferHttpRequestHandler.js');
         FileTransferHttpRequestHandler.fileTransferHttpRequestHandlerInstance = this;
     }
 
@@ -377,7 +381,7 @@ class FileTransferHttpRequestHandler {
                 
                 return res.status(result.code).json(result);         
             } catch (e) {
-                console.error(e.stack || e);
+                this.logger.error(e.stack || e);
                 return {
                     code: 500,
                     message: HTTP_RESPONSE[500]
@@ -423,6 +427,7 @@ class JsonWebTokenHttpRequestHandler {
     constructor(app){
         if(JsonWebTokenHttpRequestHandler.instance)  return JsonWebTokenHttpRequestHandler.jsonWebTokenHttpRequestHandlerInstance;
         this.app = app;
+        this.logger = new Logger('info', 'JsonWebTokenHttpRequestHandler.js');
         JsonWebTokenHttpRequestHandler.jsonWebTokenHttpRequestHandlerInstance = this;
     }
 
@@ -516,6 +521,45 @@ class JsonWebTokenHttpRequestHandler {
     }
 }
 
+class DocsRequestHandler {
+    static instance;
+    constructor(app){
+        if(DocsRequestHandler.instance)  return DocsRequestHandler.instance;
+        this.app = app;
+        this.logger = new Logger('info', 'DocsRequestHandler.js');
+        DocsRequestHandler.instance = this;
+    }
+
+    get(uri, configInfo){
+        this.logger.info("Docs Added: ", uri);
+        this.app.get(
+            uri, (req, res, next) => {
+                /* response will be sent in docRenderer Function */
+                const result = docsRenderer(res, req, next, configInfo);
+                /* response will be sent in docRenderer Function */
+                // return res.status(result.code).json(result);
+            }
+        );
+    }
+
+    setRouter(configInfo){
+        const URIs = configInfo.keys();
+        let uri;
+        const baseConfig = ConfigReader.instance.getConfig();
+        let baseUri = (baseConfig[API_TYPE.DOCS])['docs-uri'];
+        baseUri = (baseUri === '/' ? '' : baseUri);
+        while( (uri = URIs.next().value) ){
+            const rawUri = uri.toString().split('@');
+            const _uri = (rawUri[0] !== '/')
+                 ? baseUri + rawUri[0] + '/' + rawUri[1]
+                 : baseUri + rawUri[0] + rawUri[1];
+            const _configInfo = configInfo.get(uri);
+            this.get(_uri, _configInfo);
+        }
+    }
+}
+
 export {
-    RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler
+    RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler,
+    DocsRequestHandler
 }

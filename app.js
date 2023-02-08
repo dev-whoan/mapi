@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import bodyParser from 'body-parser';
+import ejs from 'ejs';
 
 var app = express();
 
@@ -11,14 +12,14 @@ import ConfigReader from './configReader/configReader.js';
 import ModelConfigReader from './configReader/modelReader.js';
 
 import DBAccessor from './middleware/db/accessor.js';
-import ProxyWorker from './middleware/proxy/worker.js';
 import API_TYPE from './enum/apiType.js';
 import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 
 /* Http Request Handler */
-import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler } from './middleware/http/index.js';
+import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler, DocsRequestHandler } from './middleware/http/index.js';
 import ServiceConfigReader from './configReader/serviceReader.js';
 import HTTP_RESPONSE from './enum/httpResponse.js';
+import Logger from './logger/index.js';
 /* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +28,6 @@ const __dirname = path.dirname(__filename);
 app.set('port', process.env.HOST_PORT);
 app.set('host', process.env.HOST_NAME);
 app.set('json spaces', 4);
-
 app.use(bodyParser.json());
 app.use((err, req, res, next) => {
     if (err) {
@@ -38,8 +38,9 @@ app.use((err, req, res, next) => {
     }
     
     next();
-  })
+})
 
+app.engine('html', ejs.renderFile);
 app.use(express.static(path.join(__dirname)));
 
 app.use(express.urlencoded({extended: true}));
@@ -48,6 +49,11 @@ app.use(express.json());
 /* Default */
 const baseConfigReader = new ConfigReader();
 baseConfigReader.printConfigs();
+    /* Logger */
+const logger = new Logger('debug', 'app.js');
+logger.initialize();
+    /* Logger */
+
 /* Default */
 
 /* CORS */
@@ -112,6 +118,12 @@ serviceConfigReader.printConfigs();
 
 /* Rest Api */
 if(baseConfigReader.getConfig()[API_TYPE.REST].use && baseConfigReader.getConfig()[API_TYPE.REST].use === 'yes'){
+    /* Docs Handler Adding Express */
+    if(baseConfigReader.getConfig()[API_TYPE.DOCS].use && baseConfigReader.getConfig()[API_TYPE.DOCS].use === 'yes'){
+        const docsRequestHandler = new DocsRequestHandler(app);
+    }
+    /* Docs Handler Adding Express */
+
     const apiConfigReader = new ApiConfigReader();
     apiConfigReader.printConfigs();
     baseConfigReader.setConfigReaders();

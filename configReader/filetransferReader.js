@@ -11,6 +11,7 @@ import ConfigReader from './configReader.js';
 import API_TYPE from '../enum/apiType.js';
 import HTTP_RESPONSE from '../enum/httpResponse.js';
 import FileTransferConfigObject from '../data/object/filetransferConfigObject.js';
+import Logger from '../logger/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,6 +30,7 @@ export default class FileTransferConfigReader{
     constructor(){
         if(FileTransferConfigReader.instance) return FileTransferConfigReader.instance;
         this.readConfigs();
+        this.logger = new Logger('info', 'FileTransferConfigReader.js');
         FileTransferConfigReader.instance = this;
     }
     
@@ -60,15 +62,15 @@ export default class FileTransferConfigReader{
             );
             
             if(oneObject.data.directory.includes('@') || oneObject.data.id.includes ('@')){
-                console.warn(`Attribute [uri] and [id] must not include '@' word.`);
-                console.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
+                this.logger.warn(`Attribute [uri] and [id] must not include '@' word.`);
+                this.logger.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
                 return;
             }
 
             let configId = oneObject.data.directory + '@' + oneObject.data.id;
             if(this.configInfo.get(configId)){
-                console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
-                console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
+                this.logger.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
+                this.logger.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
             }
             this.configInfo.set(configId, oneObject);
         });
@@ -79,11 +81,13 @@ export default class FileTransferConfigReader{
     };
 
     printConfigs(){
-        console.log("=========File Transfer Config Info=========");
+        this.logger.info("=========File Transfer Config Info=========");
         this.configInfo.forEach((item, index) => {
-            console.log(item.data);
+            this.logger.info(
+                JSON.stringify(item.data, null, 4)
+            );
         });
-        console.log("=========File Transfer Config Info=========");
+        this.logger.info("=========File Transfer Config Info=========");
     };
 
     modelCheck(){
@@ -98,13 +102,13 @@ export default class FileTransferConfigReader{
 
             let modelId = oneObject.data.customDatabase.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`** Model [${modelId}] checking...`);
+            this.logger.info(`** Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`** Model [${modelId}] Ok!`);
+            this.logger.info(`** Model [${modelId}] Ok!`);
         }
     }
 

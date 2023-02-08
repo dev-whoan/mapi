@@ -93,7 +93,6 @@ const getModelData = (model) => {
             `Cannot find model: [${model}]`
         );
     }
-    
 }
 
 const read = async (uri, query, originalUri, apiConfigDataObject, service) => {

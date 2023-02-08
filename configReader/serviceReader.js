@@ -9,32 +9,12 @@ import ModelConfigReader from './modelReader.js';
 import NoModelFoundException from '../exception/NoModelFoundException.js';
 import ServiceConfigObject from '../data/object/serviceConfigObject.js';
 import { SERVICE_ID, SERVICE_TYPE } from '../enum/serviceType.js';
+import Logger from '../logger/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const BASE_PATH = path.join(__dirname, '..', 'configs', 'services');
-/*
-{
-    "id": "user_api",
-    "create": {
-        "model": "{{ model_id }}",
-        "query": "INSERT INTO {{ model }} ( {{ COLUMNS }} ) VALUES ( {{ DATAS }} )"
-    },
-    "read": {
-        "model": "{{ model_id }}",
-        "query": "SELECT {{ COLUMNS }} FROM {{ model }} WHERE A > 1 INTER JOIN"
-    },
-    "update": {
-        "model": "{{ model_id }}",
-        "query": "UPDATE {{ model }} SET {{ manipulate }} WHERE A > 1"
-    },
-    "delete": {
-        "model": "{{ model_id }}",
-        "query": "DELETE FROM {{ model }} WHERE {{ condition }}"
-    }
-}
-*/
 
 const allowedFormat = [
     "id", "log", "create", "read", "update", "delete"
@@ -46,6 +26,7 @@ export default class ServiceConfigReader{
     constructor(){
         if(ServiceConfigReader.instance) return ServiceConfigReader.instance;
         this.#readConfigs();
+        this.logger = new Logger('info', 'ServiceConfigReader.js');
         ServiceConfigReader.instance = this;
     }
 
@@ -77,8 +58,8 @@ export default class ServiceConfigReader{
             
             let configId = prefix + oneObject.data.id;
             if(this.serviceConfigInfo.get(configId)){
-                console.warn(`Service Config is duplicated. The new config ${configId} will be set.`); 
-                console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
+                this.logger.warn(`Service Config is duplicated. The new config ${configId} will be set.`); 
+                this.logger.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
             }
             
             this.serviceConfigInfo.set(configId, oneObject);
@@ -102,11 +83,13 @@ export default class ServiceConfigReader{
     };
 
     printConfigs(){
-        console.log("=========Service Config Info=========");
+        this.logger.info("=========Service Config Info=========");
         this.serviceConfigInfo.forEach((item, index) => {
-            console.log(item.data);
+            this.logger.info(
+                JSON.stringify(item.data, null, 4)
+            );
         });
-        console.log("=========Service Config Info=========");
+        this.logger.info("=========Service Config Info=========");
     };
 
     modelCheck(){
@@ -119,13 +102,13 @@ export default class ServiceConfigReader{
             let oneObject = _configInfo.get(_key);
             let modelId = oneObject.data.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`** Model [${modelId}] checking...`);
+            this.logger.info(`** Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`** Model [${modelId}] Ok!`);
+            this.logger.info(`** Model [${modelId}] Ok!`);
         }
     }
 

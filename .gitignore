@@ -5,6 +5,7 @@ configs/**
 files/
 files/**
 
+logs/**
 # package-lock.json
 package-lock.json
 
