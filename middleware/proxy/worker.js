@@ -1,5 +1,6 @@
 import NoProxyOriginTaskDefinedException from "../../exception/NoProxyOriginTaskDefinedException.js";
 import OutofProxyTaskIndexException from "../../exception/OutofProxyTaskIndexException.js";
+import Logger from "../../logger/index.js";
 import { startLogProxy, endLogProxy, authorizeProxy } from './baseProxyTask.js';
 
 const prefixJob = [
@@ -18,6 +19,8 @@ export default class ProxyWorker{
         this.originTask = originTask; 
         this.originParams = [...originParams];
         this.originTaskOrder = originTaskOrder;
+
+        this.logger = new Logger('debug', 'Proxy');
     }
 
     checkValidity(proxyList, taskName, originTask, originTaskOrder){
@@ -89,7 +92,7 @@ export default class ProxyWorker{
         }
 
         if(jobIndex < this.proxyList.length){
-            console.warn("Although all the proxy job have finished, there are still some proxy task list is remained. The remain tasks will be skipped.");
+            this.logger.warn("Although all the proxy job have finished, there are still some proxy task list is remained. The remain tasks will be skipped.");
         }
 
         return __result;

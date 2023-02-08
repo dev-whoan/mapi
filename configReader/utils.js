@@ -36,7 +36,6 @@ const insertAt = (arr, index, elem) => [
 ];
 
 const stringToBase64 = (message) => {
-    console.log(message);
     return Buffer.from(message, 'utf8').toString('base64');
 }
 

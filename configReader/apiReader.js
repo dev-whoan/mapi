@@ -10,6 +10,7 @@ import NoModelFoundException from '../exception/NoModelFoundException.js';
 import { DocsRequestHandler } from '../middleware/http/index.js';
 import ConfigReader from './configReader.js';
 import API_TYPE from '../enum/apiType.js';
+import Logger from '../logger/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -27,6 +28,7 @@ export default class ApiConfigReader{
     constructor(){
         if(ApiConfigReader.instance) return ApiConfigReader.instance;
         this.updateConfigs();
+        this.logger = new Logger('info', 'ApiConfigReader.js');
         ApiConfigReader.instance = this;
     }
     
@@ -70,15 +72,15 @@ export default class ApiConfigReader{
             );
             
             if(oneObject.data.uri.includes('@') || oneObject.data.id.includes ('@')){
-                console.warn(`Attribute [uri] and [id] must not include '@' word.`);
-                console.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
+                this.logger.warn(`Attribute [uri] and [id] must not include '@' word.`);
+                this.logger.warn(`The configId ${oneObject.data.uri} + '@' + ${oneObject.data.id} will not be registered.`);
                 return;
             }
 
             let configId = oneObject.data.uri + '@' + oneObject.data.id;
             if(this.configInfo.get(configId)){
-                console.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
-                console.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
+                this.logger.warn(`API Config is duplicated. The new config ${configId} will be set.`); 
+                this.logger.warn(`To prevent API Config duplication, please set the concatenation of uri and id into unique string.`);
             }
             
             this.configInfo.set(configId, oneObject);
@@ -94,11 +96,11 @@ export default class ApiConfigReader{
     }
 
     printConfigs(){
-        console.log("=========RESTful API Config Info=========");
+        this.logger.info("=========RESTful API Config Info=========");
         this.configInfo.forEach((item, index) => {
-            console.log(item.data);
+            this.logger.info(JSON.stringify(item.data, null, 4));
         });
-        console.log("=========RESTful API Config Info=========");
+        this.logger.info("=========RESTful API Config Info=========");
     };
 
     modelCheck(){
@@ -111,13 +113,13 @@ export default class ApiConfigReader{
             let oneObject = _configInfo.get(_key);
             let modelId = oneObject.data.model;
             let model = new ModelConfigReader().getConfig(modelId);
-            console.log(`** Model [${modelId}] checking...`);
+            this.logger.info(`** Model [${modelId}] checking...`);
             if(!model){
                 throw new NoModelFoundException(
                     `No Model is Found for API Config -> ${modelId}`
                 );
             }
-            console.log(`** Model [${modelId}] Ok!`);
+            this.logger.info(`** Model [${modelId}] Ok!`);
         }
     }
 

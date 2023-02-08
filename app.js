@@ -19,6 +19,7 @@ import NullOrUndefinedException from './exception/nullOrUndefinedException.js';
 import { RestApiHttpRequestHandler, FileTransferHttpRequestHandler, JsonWebTokenHttpRequestHandler, DocsRequestHandler } from './middleware/http/index.js';
 import ServiceConfigReader from './configReader/serviceReader.js';
 import HTTP_RESPONSE from './enum/httpResponse.js';
+import Logger from './logger/index.js';
 /* Http Request Handler */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +49,11 @@ app.use(express.json());
 /* Default */
 const baseConfigReader = new ConfigReader();
 baseConfigReader.printConfigs();
+    /* Logger */
+const logger = new Logger('debug', 'app.js');
+logger.initialize();
+    /* Logger */
+
 /* Default */
 
 /* CORS */

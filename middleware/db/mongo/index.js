@@ -6,6 +6,7 @@ import InvalidSqlInsertExecuteException from "../../../exception/InvalidSqlInser
 import { objectKeysToArray, objectValuesToArray } from "../../../configReader/utils.js";
 import ModelConfigReader from "../../../configReader/modelReader.js";
 import HTTP_RESPONSE from "../../../enum/httpResponse.js";
+import Logger from "../../../logger/index.js";
 
 const baseConfigReader = new ConfigReader();
 const dbInfo = baseConfigReader.configInfo.get('general').database;
@@ -20,22 +21,23 @@ const uri = `mongodb://${dbInfo.id}:${dbInfo.pw}@${dbInfo.host}:${dbInfo.port}/$
 export default class MongoAccessor {
     constructor(){
         this.client = new MongoClient(uri);
+        this.logger = new Logger('info', 'MongoAccessor.js');
     }
 
     async initTest(){
         try{
             await this.client.connect();
-            console.log("MongoDB Initialize Test Passed !");
+            this.logger.info("MongoDB Initialize Test Passed !");
         } catch (e){
-            console.log(e.message.toString());
+            this.logger.error(e.message.toString());
             if(e.codeName === 'AuthenticationFailed'){
-                console.error("[Access Denied]:: Fail to connect to the Database.");
-                console.error(e);
+                this.logger.error("[Access Denied]:: Fail to connect to the Database.");
+                this.logger.error(e);
                 return PROCESS_EXIT_CODE.DB_ACCESS_DENIED;
             }
 
             if(e.message.toString().includes("ECONNREFUSED")){
-                console.error("Fail to connect to the Database. Please check [/app/configs/controller/default.json]");
+                this.logger.error("Fail to connect to the Database. Please check [/app/configs/controller/default.json]");
                 return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
             }
         }
@@ -130,15 +132,14 @@ export default class MongoAccessor {
             
             return result;
         } catch (internalError){
-            console.error(`[MongoDB]: Fail to select data. Internal Error Occured.`);
-            console.error(`Query: `, query);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[MongoDB]: Fail to select data. Internal Error Occured.`);
+            this.logger.error(`Query: `, query);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 400,
                 message: HTTP_RESPONSE[400]
             }
         }
-        
     }
 
     async update(collection, query, valueList, condition){
@@ -198,7 +199,7 @@ export default class MongoAccessor {
                 };
                 result = await _collection.updateOne(condition, updateDoc, options);
             } catch (e) {
-                console.error(e);
+                this.logger.error(e);
                 if(e.message.includes("failed validation")){
                     return {
                         affectedRows: 0,
@@ -218,9 +219,9 @@ export default class MongoAccessor {
             }
 
         } catch (internalError){
-            console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
-            console.error(`Query: `, _query);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
+            this.logger.error(`Query: `, _query);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 400,
                 message: HTTP_RESPONSE[400]
@@ -259,7 +260,6 @@ export default class MongoAccessor {
         _query = _query.replaceAll( "'", '"');
 
         try{
-            console.log("Insert request arrived");
             const document = JSON.parse(_query);
             const specialNumber = {};
             
@@ -298,8 +298,8 @@ export default class MongoAccessor {
                 const _collection = this.client.db(dbInfo.scheme).collection(collection);
                 result = await _collection.insertOne(document);
             } catch (sqlError) {
-                console.error(`[MongoDB]: Fail to insert data.`);
-                console.error(sqlError.stack || sqlError);
+                this.logger.error(`[MongoDB]: Fail to insert data.`);
+                this.logger.error(sqlError.stack || sqlError);
                 if(sqlError.message.includes("failed validation")){
                     return {
                         affectedRows: 0,
@@ -319,9 +319,9 @@ export default class MongoAccessor {
                 mongo: true
             }
         } catch (internalError){
-            console.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
-            console.error(`Query: `, _query);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[MongoDB]: Fail to insert data. Cannot prepare query.`);
+            this.logger.error(`Query: `, _query);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 400,
                 message: HTTP_RESPONSE[400]
@@ -382,9 +382,9 @@ export default class MongoAccessor {
 
             return result; 
         } catch (internalError){
-            console.error(`[MongoDB]: Fail to delete data. Cannot prepare query.`);
-            console.error(`Query: `, _query);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[MongoDB]: Fail to delete data. Cannot prepare query.`);
+            this.logger.error(`Query: `, _query);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 400,
                 message: HTTP_RESPONSE[400]

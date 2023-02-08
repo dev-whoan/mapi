@@ -1,4 +1,3 @@
-import InappropriateConfigKeyException from '../exception/inappropriateConfigKeyException.js';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import { readFile } from 'fs/promises';
 //import generalInfo from '../configs/default.json' assert {type: "json"};
@@ -13,12 +12,15 @@ import apiType from '../enum/apiType.js';
 
 
 const controlList = [
-    "cors", "restapi", "database", "jwt", "file-transfer", "docs"
+    "cors", "logger", "restapi", "database", "jwt", "file-transfer", "docs"
 ]
 
 const properties = [
     [
         'default', 'origin', 'methods', 'allow-headers'
+    ],
+    [
+        'use', 'time-log', 'level'
     ],
     [
         'use', 'base-uri', 'count'

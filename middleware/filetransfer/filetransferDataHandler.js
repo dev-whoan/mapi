@@ -1,9 +1,11 @@
 import FileTransferConfigObject from "../../data/object/filetransferConfigObject.js";
+import Logger from "../../logger/index.js";
 import FileController from "./fileController.js";
 
 export default class FileTransferDataHandler {
     constructor(){
         this.controller = new FileController();
+        this.logger = new Logger('info', 'FileTransferDataHandler.js');
     }
 
 /*

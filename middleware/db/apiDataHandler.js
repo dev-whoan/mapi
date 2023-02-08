@@ -1,9 +1,11 @@
 import HTTP_RESPONSE from "../../enum/httpResponse.js";
+import Logger from "../../logger/index.js";
 import DBAccessor from "./accessor.js";
 
 export default class ApiDataHandler{
     constructor(){
         this.dba = new DBAccessor();
+        this.logger = new Logger('info', 'ApiDataHandler');
     }
 
     async doSelect(model, query, condition, paging){
@@ -17,8 +19,8 @@ export default class ApiDataHandler{
             
             return data;
         } catch (internalError){
-            console.error(`[ApiDataHandler]: Fail to call function [doSelect].`);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[ApiDataHandler]: Fail to call function [doSelect].`);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -64,14 +66,13 @@ export default class ApiDataHandler{
                 message: HTTP_RESPONSE[204]
             };
         } catch (internalError){
-            console.error(`[ApiDataHandler]: Fail to call function [doInsert].`);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[ApiDataHandler]: Fail to call function [doInsert].`);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]
             }
         }
-        
     }
 
     async doModify(model, query, values, condition){
@@ -90,8 +91,8 @@ export default class ApiDataHandler{
             
             return result;
         } catch (internalError){
-            console.error(`[ApiDataHandler]: Fail to call function [doModify].`);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[ApiDataHandler]: Fail to call function [doModify].`);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]
@@ -129,8 +130,8 @@ export default class ApiDataHandler{
                 deletedCount: 0
             };
         } catch (internalError){
-            console.error(`[ApiDataHandler]: Fail to call function [doDelete].`);
-            console.error(internalError.stack || internalError);
+            this.logger.error(`[ApiDataHandler]: Fail to call function [doDelete].`);
+            this.logger.error(internalError.stack || internalError);
             return {
                 code: 500,
                 message: HTTP_RESPONSE[500]

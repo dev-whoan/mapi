@@ -12,6 +12,7 @@ import HTTP_RESPONSE from '../../../enum/httpResponse.js';
 import ConfigReader from '../../../configReader/configReader.js';
 import API_TYPE from '../../../enum/apiType.js';
 import DB_TYPE from '../../../enum/dbType.js';
+import Logger from '../../../logger/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,7 @@ const API_METHOD = {
     'update': "PUT",
     'delete': "DELETE"
 };
+const logger = new Logger('info', 'docs.js');
 
 const getServiceData = (serviceKey) => {
     const serviceConfigInfo = ServiceConfigReader.instance.getConfig(serviceKey);
@@ -90,7 +92,7 @@ const docsRenderer = (res, req, next, config) => {
             const paramLabel = service.service === SERVICE_CRUD_TYPE.READ ? `URI Parameter` : `Body Parameter`;
             svc_body += "<div class='one-service'>"
                 + "<div class='one-service-metadata'>"
-˙
+
                     + `<p class='one-service-method'>${API_METHOD[service.service]}</p>`
                     + '{{ API_AUTH }} '
                     + `<p class='one-service-type'>${service.type}</p>`
@@ -217,7 +219,7 @@ const docsRenderer = (res, req, next, config) => {
 
             svc_body += "<hr />";
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             return false;
         }
     });

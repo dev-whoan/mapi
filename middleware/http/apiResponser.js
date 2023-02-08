@@ -5,9 +5,11 @@ import DB_TYPE from '../../enum/dbType.js';
 import { SERVICE_TYPE, SERVICE_ID } from '../../enum/serviceType.js';
 import { URL } from 'url';
 import { create, read, update, _delete } from '../services/db/sqlExecutor.js';
+import Logger from '../../logger/index.js';
 
 export default class ApiResponser{
     constructor(apiConfigDataObject){
+        this.logger = new Logger('info', 'ApiResponser.js');
         this.apiConfigDataObject = apiConfigDataObject;
         this.apiId = this.apiConfigDataObject.uri + '@' + this.apiConfigDataObject.id;
         this.originalUri = this.apiConfigDataObject.uri === '/'
@@ -51,12 +53,12 @@ export default class ApiResponser{
     */
 
     async getApiData(uri, query){
-        console.log(`[RESTful API] Data Read request arrived(${uri}) `);
+        this.logger.info(`[RESTful API] Data Read request arrived(${uri}) `);
         const service = this.apiConfigDataObject.services.get;
         
         if(service.type === SERVICE_TYPE.DB){
             const result = await read(uri, query, this.originalUri, this.apiConfigDataObject, service).catch((err) => {
-                console.error(err.stack || err);
+                this.logger.error(err.stack || err);
                 return {
                     code: 500,
                     message: HTTP_RESPONSE[500]
@@ -73,12 +75,12 @@ export default class ApiResponser{
     }
 
     async putApiData(uri, body, query){
-        console.log(`[RESTful API] Data Update request arrived(${uri}): `, body);    
+        this.logger.info(`[RESTful API] Data Update request arrived(${uri}): `, body);    
         const service = this.apiConfigDataObject.services.put;
         
         if(service.type === SERVICE_TYPE.DB){
             const result = await update(uri, query, body, this.originalUri, this.apiConfigDataObject, service).catch((err) => {
-                console.error(err.stack || err);
+                this.logger.error(err.stack || err);
                 return {
                     code: 500,
                     message: HTTP_RESPONSE[500]
@@ -95,12 +97,12 @@ export default class ApiResponser{
     }
 
     async postApiData(uri, body, model){
-        console.log(`[RESTful API] Data Create request arrived(${uri}): `, body);
+        this.logger.info(`[RESTful API] Data Create request arrived(${uri}): `, body);
         const service = this.apiConfigDataObject.services.post;
 
         if(service.type === SERVICE_TYPE.DB){
             const result = await create(uri, body, service).catch((err) => {
-                console.error(err.stack || err);
+                this.logger.error(err.stack || err);
                 return {
                     code: 500,
                     message: HTTP_RESPONSE[500]
@@ -117,12 +119,12 @@ export default class ApiResponser{
     }
 
     async deleteApiData(uri, body){
-        console.log(`[RESTful API] Data Delete request arrived(${uri}): `, body);
+        this.logger.info(`[RESTful API] Data Delete request arrived(${uri}): `, body);
         const service = this.apiConfigDataObject.services.delete;
         
         if(service.type === SERVICE_TYPE.DB){
             const result = await _delete(uri, body, service).catch((err) => {
-                console.error(err.stack || err);
+                this.logger.error(err.stack || err);
                 return {
                     code: 500,
                     message: HTTP_RESPONSE[500]

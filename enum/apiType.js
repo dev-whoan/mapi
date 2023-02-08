@@ -1,5 +1,6 @@
 const API_TYPE = {
     CORS: "cors",
+    LOGGER: "logger",
     GENERAL: "general",
     REST: "restapi",
     DB: "database",

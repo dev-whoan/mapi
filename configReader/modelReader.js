@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import OutofConfigKeyException from '../exception/outofConfigKeyException.js';
 import ModelConfigObject from '../data/object/modelConfigObject.js';
+import Logger from '../logger/index.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,6 +23,7 @@ export default class ModelConfigReader{
     constructor(){
         if(ModelConfigReader.instance) return ModelConfigReader.instance;
         this.#readConfigs();
+        this.logger = new Logger('info', 'ModelConfigReader.js');
         ModelConfigReader.instance = this;
     }
 
@@ -66,11 +68,13 @@ export default class ModelConfigReader{
     };
 
     printConfigs(){
-        console.log("=========Model Config Info=========");
+        this.logger.info("=========Model Config Info=========");
         this.configInfo.forEach((item, index) => {
-            console.log(item.data);
+            this.logger.info(
+                JSON.stringify(item.data, null, 4)
+            );
         });
-        console.log("=========Model Config Info=========");
+        this.logger.info("=========Model Config Info=========");
     };
 
     checkValidity(json){
