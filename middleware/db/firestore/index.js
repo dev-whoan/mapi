@@ -31,8 +31,16 @@ export default class FirestoreAccessor {
 
     initialize(){
         if(!this.firebaseConfig){
-            const fbPath = path.join(process.env.PWD, 'configs', 'firebase.json');
-            this.firebaseConfig = fs.readFileSync(fbPath, 'utf8');
+            try{
+                const fbPath = path.join(process.env.PWD, 'configs', 'firebase.json');
+                this.firebaseConfig = fs.readFileSync(fbPath, 'utf8');
+                this.firebaseConfig = JSON.parse(this.firebaseConfig);
+            } catch (e){
+                this.logger.error("Fail to get firebase config");
+                this.logger.error(e.stack || e);
+                return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
+            }
+            
         }
     }
 
