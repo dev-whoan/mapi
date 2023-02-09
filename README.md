@@ -53,11 +53,14 @@ You have to set all the needed things `JSON` file, according to its' right path 
 
 ## Prerequisites
 
-You should prepare configuration for MAPI. The base files are `default.json`, `model`, `controller`, and `service`.
+You should prepare configuration for MAPI. The base files are `default.json`, `model`, `controller`, and `service`.</br>
+
+
 
 ```
 configs
 │    default.json
+└─── firebase.json
 └─── controller
 │    └    rest
 │         └─── [some_jsons_for_rest_setting.json]
@@ -69,6 +72,9 @@ configs
 └─── model
      └─── [some_jsons_for_model_setting.json]     
 ```
+
+
+
 
 ## Default setting for MAPI
 
@@ -180,6 +186,33 @@ database property define Database connect information. If any of config is wrong
 `port`: Port of Database
 
 `scheme`: Database(scheme, collection) to use. It must be created in the Database.
+
+
+### Example firebase.json
+
+
+If you want to use Firestore, add more firebase.json file in configs folder.</br>
+Firebase.json file is firebaseConifg file.</br>
+If you don't know firebaseConfig, check firebase project setting and find it. </br>
+If you can't access firestore, check Read-Write rules in firestore.</br>
+
+```
+{
+  "apiKey": "apiKey",
+  "authDomain": "authDomain",
+  "databaseURL": "databaseURL",
+  "projectId": "projectId",
+  "storageBucket": " * If you use firebase storage,you need it * ",
+  "messagingSenderId": "messagingSenderId",
+  "appId": "appId",
+  "measurementId": "measurementId"
+}
+    
+```
+
+
+
+
 
 ### jwt Property
 
