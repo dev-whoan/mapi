@@ -276,7 +276,7 @@ export default class FirestoreAccessor {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
             const decodedValue=decodeURI(value);
-            value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
+            value = (decodedValue === value) ? valueList[i] : decodedValue;
 
             if (sn) {
                 if (sn === 'integer') {
@@ -426,7 +426,7 @@ export default class FirestoreAccessor {
                 let sn = specialNumber[fieldList[i]];
                 let value = valueList[i];
                 const decodedValue=decodeURI(value);
-                value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
+                value = (decodedValue === value) ? valueList[i] : decodedValue;
 
                 if (sn) {
                     if (sn === 'integer') {
