@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 // import firebaseConfig from "../../../configs/firebase.json" assert { type: "json" };
 import ModelConfigReader from "../../../configReader/modelReader.js";
-import { objectKeysToArray } from "../../../configReader/utils.js";
+import { objectKeysToArray, objectValuesToArray } from "../../../configReader/utils.js";
 import {
     collection,
     doc,
@@ -21,6 +21,7 @@ import {
     updateDoc,
 } from "firebase/firestore";
 import Logger from "../../../logger/index.js";
+import { fileLoader } from "ejs";
 
 export default class FirestoreAccessor {
     constructor() {
@@ -119,6 +120,7 @@ export default class FirestoreAccessor {
         const modelColumns = ModelConfigReader.instance.configInfo.get(_collections).data.columns;
         const objectFields = objectKeysToArray(modelColumns);
 
+        
         for (let i = 0; i < objectFields.length; i++) {
             let oneKey = objectFields[i];
             let oneValue = modelColumns[oneKey];
@@ -130,6 +132,8 @@ export default class FirestoreAccessor {
         
         let fieldList;
         const queryConstraints = [];
+        
+
         if(condition!=null)
        {
         fieldList = objectKeysToArray(condition);
@@ -139,7 +143,7 @@ export default class FirestoreAccessor {
             let value = condition[fieldList[i]];
             const decodedValue=decodeURI(value);
             value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
-
+          
             if (sn) {
                 if (sn === 'integer') {
                     value = parseInt(value);
@@ -151,7 +155,8 @@ export default class FirestoreAccessor {
             queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
         }
        }
-        
+       const valueList=objectValuesToArray(condition);
+  
         if (paging["pagination-value"]) {
             let page_count = parseInt(paging["count"]);
             let page_number = parseInt(paging["pagination-value"]);
@@ -253,9 +258,8 @@ export default class FirestoreAccessor {
         }
 
         _query = _query.replaceAll("'", '"');
-
         const db = getFirestore(this.firebase);
-
+       
         let result;
         let kk = {};
         const modelColumns = ModelConfigReader.instance.getConfig(model).getData().columns;
@@ -272,6 +276,7 @@ export default class FirestoreAccessor {
             }
         }
         const fieldList = objectKeysToArray(_query);
+       
         for (let i = 0; i < fieldList.length; i++) {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
@@ -288,7 +293,7 @@ export default class FirestoreAccessor {
             }
             _query[fieldList[i]] = value;
         }
-
+  
         try {
             result = await addDoc(collection(db, model), _query).then((e) => {
                 const return_val = {
@@ -316,6 +321,7 @@ export default class FirestoreAccessor {
     async update(collections, _query, valueList, condition) {
         const document = {};
         const specialNumber = {};
+        
         let i = 0;
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
@@ -335,26 +341,33 @@ export default class FirestoreAccessor {
             if (oneValue.toLowerCase() === 'float' || oneValue.toLowerCase() === 'integer') {
                 specialNumber[oneKey] = oneValue;
             }
+            else
+            specialNumber[oneKey]="string";
         }
         const fieldList = objectKeysToArray(condition);
         const queryConstraints = [];
+
         for (let i = 0; i < fieldList.length; i++) {
             let sn = specialNumber[fieldList[i]];
             let value = condition[fieldList[i]];
-            const decodedValue=decodeURI(value);
-            value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
-
+          
             if (sn) {
                 if (sn === 'integer') {
                     value = parseInt(value);
                     _query[fieldList[i]] = parseInt(_query[fieldList[i]]);
+                   condition[fieldList[i]]=parseInt(condition[fieldList]);
+    
                 } else if (sn === 'float') {
                     value = parseFloat(value);
+                   condition[fieldList[i]]=parseFloat(condition[fieldList[i]]);
                     _query[fieldList[i]] = parseFloat(_query[fieldList[i]]);
+                }
+                else{
+                    const decodedValue=decodeURI(value);
+                    value = (decodedValue === value) ? valueList[fieldList[i]] : decodedValue;
                 }
             }
             condition[fieldList[i]] = value;
-
             queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
         }
 
@@ -368,6 +381,8 @@ export default class FirestoreAccessor {
             else _code = 200;
             const last = querySnapshot.docs[0];
             const executedQuery = _query;
+            console.log(last);
+            
             let kk = {};
             try{
                 await updateDoc(doc(db, collections, last.id), executedQuery);
@@ -388,7 +403,7 @@ export default class FirestoreAccessor {
                 }
             }
         } catch (internalError) {
-            this.logger.error(`[Firestore]: Fail to insert data. Cannot prepare query.`);
+            this.logger.error(`[Firestore]: Fail to update data. Cannot prepare query.`);
             this.logger.error(`Query: `, _query);
             this.logger.error(internalError.stack || internalError);
             return {
@@ -420,12 +435,15 @@ export default class FirestoreAccessor {
                     specialNumber[oneKey] = oneValue;
                 }
             }
+            
+
 
             const fieldList = objectKeysToArray(document);
             for (let i = 0; i < fieldList.length; i++) {
                 let sn = specialNumber[fieldList[i]];
                 let value = valueList[i];
                 const decodedValue=decodeURI(value);
+            
                 value = (decodedValue === value) ? valueList[i] : decodedValue;
 
                 if (sn) {
@@ -437,15 +455,19 @@ export default class FirestoreAccessor {
                 }
                 document[fieldList[i]] = value;
             }
-
+                      
             const queryConstraints = [];
-            let object_array = objectKeysToArray(document);
 
+  
+            let object_array = objectKeysToArray(document);
+              console.log(object_array);
             for (let i = 0; i < object_array.length; i++) {
                 queryConstraints.push(where(object_array[i], "==", document[fieldList[i]]));
             }
             const db = getFirestore(this.firebase);
-            const q = query(collection(db, _collection), queryConstraints);
+            const q = query(collection(db, _collection), ...queryConstraints);
+            console.log(queryConstraints);
+            console.log("커리");
             const querySnapshot = await getDocs(q);
             const idx = querySnapshot.docs.length;
             let current = 0;
