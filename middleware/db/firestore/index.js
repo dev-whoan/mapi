@@ -29,18 +29,18 @@ export default class FirestoreAccessor {
         this.initialize();
     }
 
-    initialize() {
-        if (!this.firebaseConfig) {
-            try {
+    initialize(){
+        if(!this.firebaseConfig){
+            try{
                 const fbPath = path.join(process.env.PWD, 'configs', 'firebase.json');
                 this.firebaseConfig = fs.readFileSync(fbPath, 'utf8');
                 this.firebaseConfig = JSON.parse(this.firebaseConfig);
-            } catch (e) {
+            } catch (e){
                 this.logger.error("Fail to get firebase config");
                 this.logger.error(e.stack || e);
                 return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
             }
-
+            
         }
     }
 
@@ -106,6 +106,7 @@ export default class FirestoreAccessor {
     }
 
     async select(_collections, _query, condition, paging) {
+
         if (condition && condition.page) delete condition.page;
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
@@ -113,6 +114,7 @@ export default class FirestoreAccessor {
         _query = _query.replaceAll("'", '"');
         const db = getFirestore(this.firebase);
         let result = [];
+        let return_Val = {};
         const specialNumber = {};
         const modelColumns = ModelConfigReader.instance.configInfo.get(_collections).data.columns;
         const objectFields = objectKeysToArray(modelColumns);
@@ -124,36 +126,48 @@ export default class FirestoreAccessor {
             if (oneValue.toLowerCase() === 'float' || oneValue.toLowerCase() === 'integer') {
                 specialNumber[oneKey] = oneValue;
             }
+            else{
+                specialNumber[oneKey]="string"
+            }
         }
         let fieldList;
         const queryConstraints = [];
-        if (condition != null) {
-            fieldList = objectKeysToArray(condition);
-
-            for (let i = 0; i < fieldList.length; i++) {
-                let sn = specialNumber[fieldList[i]];
-                let value = condition[fieldList[i]];
-                if (sn) {
-                    if (sn === 'integer') {
-                        value = parseInt(value);
-                    } else if (sn === 'float') {
-                        value = parseFloat(value);
-                    }
+        if(condition!=null)
+       {
+        fieldList = objectKeysToArray(condition);
+        
+        for (let i = 0; i < fieldList.length; i++) {
+            let sn = specialNumber[fieldList[i]];
+            let value = condition[fieldList[i]];
+            console.log(sn);
+            if (sn) {
+                if (sn === 'integer') {
+                    value = parseInt(value);
+                } else if (sn === 'float') {
+                    value = parseFloat(value);
                 }
-                condition[fieldList[i]] = value;
-                queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
+                else{
+                    value=decodeURI(value);
+                    let incoding_value=encodeURI(value);
+                    if(incoding_value==value) value=condition[fieldList[i]];  
+                }
             }
+            condition[fieldList[i]] = value;
+            queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
         }
-
+       }
+        
         if (paging["pagination-value"]) {
             var page_count = parseInt(paging["count"]);
             var page_number = parseInt(paging["pagination-value"]);
             if (page_number == 1) {
-                const q = query(
+                
+                    const q = query(
                     collection(db, _collections),
                     ...queryConstraints,
                     limit(page_count)
                 );
+                
 
                 try {
                     const querySnapshot = await getDocs(q);
@@ -262,6 +276,8 @@ export default class FirestoreAccessor {
             if (oneValue.toLowerCase() === 'float' || oneValue.toLowerCase() === 'integer') {
                 specialNumber[oneKey] = oneValue;
             }
+            else
+            specialNumber[oneKey]="string"
         }
         const fieldList = objectKeysToArray(_query);
         for (let i = 0; i < fieldList.length; i++) {
@@ -273,6 +289,11 @@ export default class FirestoreAccessor {
                 }
                 else if (sn === 'float') {
                     value = parseFloat(value);
+                }
+                else{
+                    value=decodeURI(value);
+                    let incoding_value=encodeURI(value);
+                    if(incoding_value==value) value=condition[fieldList[i]]; 
                 }
             }
             _query[fieldList[i]] = value;
@@ -324,6 +345,9 @@ export default class FirestoreAccessor {
             if (oneValue.toLowerCase() === 'float' || oneValue.toLowerCase() === 'integer') {
                 specialNumber[oneKey] = oneValue;
             }
+            else{
+                specialNumber[oneKey]=oneValue;
+            }
         }
         const fieldList = objectKeysToArray(condition);
         const queryConstraints = [];
@@ -337,6 +361,11 @@ export default class FirestoreAccessor {
                 } else if (sn === 'float') {
                     value = parseFloat(value);
                     _query[fieldList[i]] = parseFloat(_query[fieldList[i]]);
+                }
+                else{
+                    value=decodeURI(value);
+                    let incoding_value=encodeURI(value);
+                    if(incoding_value==value) value=condition[fieldList[i]]; 
                 }
             }
             condition[fieldList[i]] = value;
@@ -389,7 +418,7 @@ export default class FirestoreAccessor {
     }
 
     async delete(_collection, _query, valueList) {
-
+       
         let i = 0;
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
@@ -409,6 +438,9 @@ export default class FirestoreAccessor {
                 if (oneValue.toLowerCase() === 'float' || oneValue.toLowerCase() === 'integer') {
                     specialNumber[oneKey] = oneValue;
                 }
+                else{
+                    specialNumber[oneKey]=oneValue;
+                }
             }
 
             const fieldList = objectKeysToArray(document);
@@ -420,6 +452,11 @@ export default class FirestoreAccessor {
                         value = parseInt(value);
                     } else if (sn === 'float') {
                         value = parseFloat(value);
+                    }
+                    else{
+                    value=decodeURI(value);
+                    let incoding_value=encodeURI(value);
+                    if(incoding_value==value) value=condition[fieldList[i]]; 
                     }
                 }
                 document[fieldList[i]] = value;
