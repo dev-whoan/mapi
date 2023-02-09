@@ -29,18 +29,18 @@ export default class FirestoreAccessor {
         this.initialize();
     }
 
-    initialize(){
-        if(!this.firebaseConfig){
-            try{
+    initialize() {
+        if (!this.firebaseConfig) {
+            try {
                 const fbPath = path.join(process.env.PWD, 'configs', 'firebase.json');
                 this.firebaseConfig = fs.readFileSync(fbPath, 'utf8');
                 this.firebaseConfig = JSON.parse(this.firebaseConfig);
-            } catch (e){
+            } catch (e) {
                 this.logger.error("Fail to get firebase config");
                 this.logger.error(e.stack || e);
                 return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
             }
-            
+
         }
     }
 
@@ -107,14 +107,12 @@ export default class FirestoreAccessor {
 
     async select(_collections, _query, condition, paging) {
         if (condition && condition.page) delete condition.page;
-        const queryz = condition ? condition : {};
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
         }
         _query = _query.replaceAll("'", '"');
         const db = getFirestore(this.firebase);
         let result = [];
-        let return_Val = {};
         const specialNumber = {};
         const modelColumns = ModelConfigReader.instance.configInfo.get(_collections).data.columns;
         const objectFields = objectKeysToArray(modelColumns);
@@ -127,20 +125,24 @@ export default class FirestoreAccessor {
                 specialNumber[oneKey] = oneValue;
             }
         }
-        const fieldList = objectKeysToArray(condition);
+        let fieldList;
         const queryConstraints = [];
-        for (let i = 0; i < fieldList.length; i++) {
-            let sn = specialNumber[fieldList[i]];
-            let value = condition[fieldList[i]];
-            if (sn) {
-                if (sn === 'integer') {
-                    value = parseInt(value);
-                } else if (sn === 'float') {
-                    value = parseFloat(value);
+        if (condition != null) {
+            fieldList = objectKeysToArray(condition);
+
+            for (let i = 0; i < fieldList.length; i++) {
+                let sn = specialNumber[fieldList[i]];
+                let value = condition[fieldList[i]];
+                if (sn) {
+                    if (sn === 'integer') {
+                        value = parseInt(value);
+                    } else if (sn === 'float') {
+                        value = parseFloat(value);
+                    }
                 }
+                condition[fieldList[i]] = value;
+                queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
             }
-            condition[fieldList[i]] = value;
-            queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
         }
 
         if (paging["pagination-value"]) {
