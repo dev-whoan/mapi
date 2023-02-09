@@ -445,7 +445,7 @@ export default class FirestoreAccessor {
                 queryConstraints.push(where(object_array[i], "==", document[fieldList[i]]));
             }
             const db = getFirestore(this.firebase);
-            const q = query(collection(db, _collection), queryConstraints);
+            const q = query(collection(db, _collection), ...queryConstraints);
             const querySnapshot = await getDocs(q);
             const idx = querySnapshot.docs.length;
             let current = 0;
