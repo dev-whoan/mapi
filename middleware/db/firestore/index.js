@@ -29,18 +29,18 @@ export default class FirestoreAccessor {
         this.initialize();
     }
 
-    initialize() {
-        if (!this.firebaseConfig) {
-            try {
+    initialize(){
+        if(!this.firebaseConfig){
+            try{
                 const fbPath = path.join(process.env.PWD, 'configs', 'firebase.json');
                 this.firebaseConfig = fs.readFileSync(fbPath, 'utf8');
                 this.firebaseConfig = JSON.parse(this.firebaseConfig);
-            } catch (e) {
+            } catch (e){
                 this.logger.error("Fail to get firebase config");
                 this.logger.error(e.stack || e);
                 return PROCESS_EXIT_CODE.DB_FAIL_TO_CONNECT;
             }
-
+            
         }
     }
 
@@ -106,6 +106,7 @@ export default class FirestoreAccessor {
     }
 
     async select(_collections, _query, condition, paging) {
+
         if (condition && condition.page) delete condition.page;
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
@@ -113,6 +114,7 @@ export default class FirestoreAccessor {
         _query = _query.replaceAll("'", '"');
         const db = getFirestore(this.firebase);
         let result = [];
+        
         const specialNumber = {};
         const modelColumns = ModelConfigReader.instance.configInfo.get(_collections).data.columns;
         const objectFields = objectKeysToArray(modelColumns);
@@ -125,35 +127,42 @@ export default class FirestoreAccessor {
                 specialNumber[oneKey] = oneValue;
             }
         }
+        
         let fieldList;
         const queryConstraints = [];
-        if (condition != null) {
-            fieldList = objectKeysToArray(condition);
+        if(condition!=null)
+       {
+        fieldList = objectKeysToArray(condition);
+        
+        for (let i = 0; i < fieldList.length; i++) {
+            let sn = specialNumber[fieldList[i]];
+            let value = condition[fieldList[i]];
+            const decodedValue=decodeURI(value);
+            value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
 
-            for (let i = 0; i < fieldList.length; i++) {
-                let sn = specialNumber[fieldList[i]];
-                let value = condition[fieldList[i]];
-                if (sn) {
-                    if (sn === 'integer') {
-                        value = parseInt(value);
-                    } else if (sn === 'float') {
-                        value = parseFloat(value);
-                    }
+            if (sn) {
+                if (sn === 'integer') {
+                    value = parseInt(value);
+                } else if (sn === 'float') {
+                    value = parseFloat(value);
                 }
-                condition[fieldList[i]] = value;
-                queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
             }
+            condition[fieldList[i]] = value;
+            queryConstraints.push(where(fieldList[i], "==", condition[fieldList[i]]));
         }
-
+       }
+        
         if (paging["pagination-value"]) {
-            var page_count = parseInt(paging["count"]);
-            var page_number = parseInt(paging["pagination-value"]);
+            let page_count = parseInt(paging["count"]);
+            let page_number = parseInt(paging["pagination-value"]);
             if (page_number == 1) {
-                const q = query(
+                
+                    const q = query(
                     collection(db, _collections),
                     ...queryConstraints,
                     limit(page_count)
                 );
+                
 
                 try {
                     const querySnapshot = await getDocs(q);
@@ -176,7 +185,7 @@ export default class FirestoreAccessor {
                     }
                 }
             } else {
-                var num = page_count * (page_number - 1);
+                let num = page_count * (page_number - 1);
                 try {
                     const q = query(
                         collection(db, _collections),
@@ -246,7 +255,6 @@ export default class FirestoreAccessor {
         _query = _query.replaceAll("'", '"');
 
         const db = getFirestore(this.firebase);
-        const ref = collection(db, model);
 
         let result;
         let kk = {};
@@ -267,6 +275,9 @@ export default class FirestoreAccessor {
         for (let i = 0; i < fieldList.length; i++) {
             let sn = specialNumber[fieldList[i]];
             let value = valueList[i];
+            const decodedValue=decodeURI(value);
+            value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
+
             if (sn) {
                 if (sn === 'integer') {
                     value = parseInt(value);
@@ -330,6 +341,9 @@ export default class FirestoreAccessor {
         for (let i = 0; i < fieldList.length; i++) {
             let sn = specialNumber[fieldList[i]];
             let value = condition[fieldList[i]];
+            const decodedValue=decodeURI(value);
+            value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
+
             if (sn) {
                 if (sn === 'integer') {
                     value = parseInt(value);
@@ -348,35 +362,31 @@ export default class FirestoreAccessor {
             const db = getFirestore(this.firebase);
             const q = query(collection(db, collections), ...queryConstraints);
             const querySnapshot = await getDocs(q);
-            var code = 2;
+            let _code = 200;
 
-
-            if (querySnapshot.docs.length == 0) code = 201;
-            else code = 200;
+            if (querySnapshot.docs.length == 0) _code = 201;
+            else _code = 200;
             const last = querySnapshot.docs[0];
-            const lists = Object.keys(last.data());
-            let res = {};
+            const executedQuery = _query;
             let kk = {};
-            var val_ = [];
-            await updateDoc(doc(db, collections, last.id), _query)
-                .then((e) => {
-                    const result = {
-                        code: code,
-                        affectedRows: _query.length,
-                        acknowledged: true,
-                        document: _query,
-                        firestore: true,
-                    };
-                    kk = result;
-                })
-                .catch((error) => {
-                    const result = {
-                        code: 400,
-                        message: HTTP_RESPONSE[400]
-                    };
-                    kk = result;
-                });
-            return kk;
+            try{
+                await updateDoc(doc(db, collections, last.id), executedQuery);
+                return {
+                    code: _code,
+                    affectedRows: _query.length,
+                    acknowledged: true,
+                    document: _query,
+                    firestore: true,
+                };
+            } catch (error) {
+                this.logger.error(`[Firestore]: Fail to update data. Cannot prepare query.`);
+                this.logger.error(`Query: `, executedQuery);
+                this.logger.error(error.stack || error);
+                return {
+                    code: 400,
+                    message: HTTP_RESPONSE[400]
+                }
+            }
         } catch (internalError) {
             this.logger.error(`[Firestore]: Fail to insert data. Cannot prepare query.`);
             this.logger.error(`Query: `, _query);
@@ -389,7 +399,7 @@ export default class FirestoreAccessor {
     }
 
     async delete(_collection, _query, valueList) {
-
+       
         let i = 0;
         while (_query.includes('?')) {
             _query = _query.replace('\?', `'${valueList[i++]}'`);
@@ -415,6 +425,9 @@ export default class FirestoreAccessor {
             for (let i = 0; i < fieldList.length; i++) {
                 let sn = specialNumber[fieldList[i]];
                 let value = valueList[i];
+                const decodedValue=decodeURI(value);
+                value = (decodedValue === value) ? condition[fieldList[i]] : decodedValue;
+
                 if (sn) {
                     if (sn === 'integer') {
                         value = parseInt(value);
@@ -432,22 +445,28 @@ export default class FirestoreAccessor {
                 queryConstraints.push(where(object_array[i], "==", document[fieldList[i]]));
             }
             const db = getFirestore(this.firebase);
-            const q = query(collection(db, _collection), ...queryConstraints);
+            const q = query(collection(db, _collection), queryConstraints);
             const querySnapshot = await getDocs(q);
-            var idx = querySnapshot.docs.length;
+            const idx = querySnapshot.docs.length;
+            let current = 0;
             querySnapshot.forEach((docs) => {
-                const ks = deleteDoc(doc(db, _collection, docs.id))
-                    .then((i) => { })
+                deleteDoc(doc(db, _collection, docs.id))
+                    .then((ignore) => {
+                        if(++current >= idx){
+                            return {
+                                deletedCount: idx
+                            };
+                        }
+                    })
                     .catch((error) => {
+                        this.logger.error(`[Firestore]: Fail to delete data. Cannot prepare query.`);
+                        this.logger.error(error.stack || error);
                         return {
                             code: 400,
                             message: HTTP_RESPONSE[400],
                         };
                     });
             });
-            return {
-                deletedCount: idx
-            };
         } catch (internalError) {
             this.logger.error(`[Firestore]: Fail to delete data. Cannot prepare query.`);
             this.logger.error(`Query: `, _query);
