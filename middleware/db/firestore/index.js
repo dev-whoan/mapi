@@ -130,6 +130,7 @@ export default class FirestoreAccessor {
                 specialNumber[oneKey]="string"
             }
         }
+        
         let fieldList;
         const queryConstraints = [];
         if(condition!=null)
