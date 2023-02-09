@@ -7,8 +7,10 @@ import DB_TYPE from "../../../enum/dbType.js";
 import HTTP_RESPONSE from "../../../enum/httpResponse.js";
 import { SERVICE_CRUD_TYPE, SERVICE_ID, SERVICE_TYPE } from "../../../enum/serviceType.js";
 import NoSuchMapiSettingFoundException from "../../../exception/NoSuchMapiSettingFoundException.js";
+import Logger from "../../../logger/index.js";
 import ApiDataHandler from "../../db/apiDataHandler.js";
 
+const logger = new Logger('info', 'sqlExecutor.js');
 const getConditionFromUri = (uri, originalUri) => {
     let conditionUri = uri.split(originalUri)[1];
     let _requestConditions = conditionUri.split('/');
@@ -19,8 +21,8 @@ const getConditionFromUri = (uri, originalUri) => {
     }
 
     if(_requestConditions.length % 2 != 0){
-        console.error("[apiResponser-getApiData]: User sent incorrect request.");
-        console.error(`Condition must match follow rule: /key1/{value1}/key2/{value2}... but given condition is [${_requestConditions}]`)
+        logger.error("[apiResponser-getApiData]: User sent incorrect request.");
+        logger.error(`Condition must match follow rule: /key1/{value1}/key2/{value2}... but given condition is [${_requestConditions}]`)
         return {
             code: 400
         };
@@ -141,7 +143,7 @@ const create = async (uri, body, service) => {
             const key = bodyKeys[_key];
             const substitutionString = `{{ body.${key} }}`;
             if (_serviceQuery.indexOf(substitutionString) === -1) {
-                console.warn(`[RESTful API]: Unknown field is given to create data [ ${substitutionString} ].`);
+                logger.warn(`[RESTful API]: Unknown field is given to create data [ ${substitutionString} ].`);
                 return {
                     code: 400,
                     message: HTTP_RESPONSE[400]
@@ -178,7 +180,7 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
         let _serviceQuery = serviceRawQuery.query.replaceAll('{{ model }}', serviceRawQuery.model);
         let _condition = getConditionFromUri(uri, originalUri);
         if(!_condition){
-            console.error(`Cannot find condition from request uri [${uri}]`);
+            logger.error(`Cannot find condition from request uri [${uri}]`);
             return {
                 code: 400,
                 message: HTTP_RESPONSE[400]
@@ -193,7 +195,7 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
             const key = bodyKeys[_key];
             const substitutionString = `{{ body.${key} }}`;
             if (_serviceQuery.indexOf(substitutionString) === -1) {
-                console.warn(`[RESTful API]: Unknown field is given for creating data [ ${substitutionString} ].`);
+                logger.warn(`[RESTful API]: Unknown field is given for creating data [ ${substitutionString} ].`);
                 return {
                     code: 400,
                     message: HTTP_RESPONSE[400]
@@ -203,7 +205,9 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
             preparedValues.push(body[key]);
         }
     
-        if (ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO) {
+        if (ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.MONGO
+        ||  ConfigReader.instance.configInfo.get('general')[API_TYPE.DB].type === DB_TYPE.FIRESTORE)
+        {
             const serviceQuery = _serviceQuery;
     
             return apiDataHandler.doModify(modelData.id, serviceQuery, preparedValues, _condition);
@@ -213,7 +217,7 @@ const update = async (uri, query, body, originalUri, apiConfigDataObject, servic
             const key = _conditionKey[_key];
             const substitutionString = `{{ condition.${key} }}`;
             if (_serviceQuery.indexOf(substitutionString) === -1) {
-                console.warn(`[RESTful API]: Unknown field is given as a condition for creating data [ ${substitutionString} ].`);
+                logger.warn(`[RESTful API]: Unknown field is given as a condition for creating data [ ${substitutionString} ].`);
                 return {
                     code: 400,
                     message: HTTP_RESPONSE[400]
@@ -247,7 +251,7 @@ const _delete = async (uri, body, service) => {
             const key = bodyKeys[_key];
             const substitutionString = `{{ body.${key} }}`;
             if(_serviceQuery.indexOf(substitutionString) === -1){
-                console.warn(`[RESTful API]: Unknown field is given to delete data [ ${substitutionString} ].`);
+                logger.warn(`[RESTful API]: Unknown field is given to delete data [ ${substitutionString} ].`);
                 return {
                     code: 400,
                     message: HTTP_RESPONSE[400]

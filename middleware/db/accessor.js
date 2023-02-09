@@ -2,8 +2,8 @@ import configReader from '../../configReader/configReader.js';
 import MariaDBAccessor from './mariadb/index.js';
 import MongoAccessor from './mongo/index.js';
 import DB_TYPE from '../../enum/dbType.js';
-import FirebaseAccessor from './firebase/index.js';
 import UnknownDatabaseAccessorException from '../../exception/unknownDatabaseAccessorException.js';
+import FirestoreAccessor from './firestore/index.js';
 
 export default class DBAccessor {
     constructor(){
@@ -15,8 +15,8 @@ export default class DBAccessor {
             case DB_TYPE.MONGO:
                 this.operator = new MongoAccessor();
                 break;
-            case DB_TYPE.FIREBASE:
-                this.operator = new FirebaseAccessor();
+            case DB_TYPE.FIRESTORE:
+                this.operator = new FirestoreAccessor();
                 break;
             default:
                 this.operator = null;
